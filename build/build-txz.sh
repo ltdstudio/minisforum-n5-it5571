@@ -1,18 +1,19 @@
 #!/bin/bash
 # build-txz.sh — assemble the Slackware package (.txz) for the plugin.
-# Layout mirrors wireview-hwmon-unraid:
+# .txz == tar.xz archive with the standard Slackware layout:
 #   usr/local/emhttp/plugins/<plugin>/   WebGUI (page, php, scripts, icons)
 #   lib/modules/<kver>/extra/            kernel module
 #   install/slack-desc                   package description
+# Built with plain tar+xz (no Slackware tools required on the build host).
 #
-# Usage: build-txz.sh <KVER> <KO_PATH>
-# Output: minisforum-n5-it5571-0.1.0-x86_64-<KVER>.txz
+# Usage: build-txz.sh <KVER> <KO_PATH> [OUTPUT_DIR]
 set -euo pipefail
 
 PLUGIN="minisforum-n5-it5571"
 VERSION="0.1.0"
 KVER="${1:?KVER required}"
 KO="${2:?path to .ko required}"
+OUTDIR="${3:-$(pwd)}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"   # repo root
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -35,16 +36,16 @@ install -m 0644 "$KO" "$WORK/lib/modules/$KVER/extra/minisforum_n5_it5571.ko"
 mkdir -p "$WORK/install"
 cp "$SRC/src/install/slack-desc" "$WORK/install/"
 
-# ── 4. Permissions & assemble ──────────────────────────────────────
+# ── 4. Permissions & assemble (tar.xz) ─────────────────────────────
 chmod 755 "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts/restore-bios.sh"
 find "$WORK" -type d -exec chmod 755 {} \;
 find "$WORK" -type f -exec chmod 644 {} \;
 chmod 755 "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts/restore-bios.sh"
-chmod 644 "$WORK/lib/modules/$KVER/extra/minisforum_n5_it5571.ko"
 
-PKG="$(pwd)/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
+mkdir -p "$OUTDIR"
+PKG="$OUTDIR/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
 cd "$WORK"
-makepkg -l y -c n "$PKG" > /dev/null
+tar --owner=root --group=root -cJf "$PKG" .
 cd - > /dev/null
 ls -la "$PKG"
 echo "PKG_OK: $PKG"

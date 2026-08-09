@@ -1,5 +1,5 @@
 Menu="Settings"
-Icon="/usr/local/emhttp/plugins/minisforum-n5-it5571/icons/minisforum-n5-it5571.png"
+Icon="minisforum-n5-it5571.png"
 Title="Minisforum N5 EC / IT5571 Driver"
 ---
 <?PHP
