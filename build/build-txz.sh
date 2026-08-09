@@ -51,7 +51,8 @@ chmod 755 "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts/restore-bios.sh"
 mkdir -p "$OUTDIR"
 PKG="$OUTDIR/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
 cd "$WORK"
-tar --owner=root --group=root -cJf "$PKG" .
+# COPYFILE_DISABLE=1: 防止 macOS tar 写入 AppleDouble (._*) 垃圾条目
+COPYFILE_DISABLE=1 tar --owner=root --group=root -cJf "$PKG" .
 cd - > /dev/null
 ls -la "$PKG"
 echo "PKG_OK: $PKG"
