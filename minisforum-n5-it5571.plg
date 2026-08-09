@@ -6,7 +6,7 @@
   <!ENTITY repo      "https://github.com/ltdstudio/minisforum-n5-it5571">
   <!ENTITY pluginURL "&repo;/raw/main/minisforum-n5-it5571.plg">
   <!ENTITY support   "&repo;/issues">
-  <!ENTITY launch    "Settings/minisforum-n5-it5571">
+  <!ENTITY launch    "Utilities/minisforum-n5-it5571">
   <!ENTITY icon      "&repo;/raw/main/icons/minisforum-n5-it5571.png">
 ]>
 
