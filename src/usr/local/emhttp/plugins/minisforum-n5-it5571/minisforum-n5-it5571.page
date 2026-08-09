@@ -168,7 +168,8 @@ tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
 <? endif; ?>
 
 <div class="note">
-  风扇控制建议使用 Fan control: <b>FanCtrl Plus 2</b>（推荐 recommended）或 Dynamix Fan Auto Control。
+  风扇控制建议使用 Fan control: <b>FanCtrl Plus 2</b>（推荐 recommended）
+  系统温控建议使用 System temperature: <b>Dynamix System Temperature</b>
   每路 PWM 只交给一个控制器 Assign each PWM to one controller only。
   模块卸载自动恢复 EC 自动模式 Module unload restores EC automatic mode.
 </div>
