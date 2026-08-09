@@ -14,6 +14,10 @@
   pluginURL="&pluginURL;" support="&support;" launch="&launch;"
   icon="&icon;" min="7.0.0">
 
+  <ICON>
+/usr/local/emhttp/plugins/minisforum-n5-it5571/images/minisforum-n5-it5571.png
+  </ICON>
+
   <CHANGES>
 ## &version;
 - Initial public release
