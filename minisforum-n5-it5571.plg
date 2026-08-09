@@ -10,6 +10,16 @@
   <!ENTITY icon      "&repo;/raw/main/icons/minisforum-n5-it5571.png">
 ]>
 
+<!--
+  DISCLAIMER / 免责声明:
+  非官方开发 · 包含未验证因素 · 用户自行承担风险
+  This is an independent community plugin, NOT affiliated with or endorsed by
+  Minisforum. It contains unverified factors and is provided "as is", without
+  warranty of any kind. Use at your own risk; the author accepts no liability
+  for any damage or loss. Only N5 / F8NAA hardware is supported (DMI guard).
+  See https://github.com/ltdstudio/minisforum-n5-it5571/blob/main/DISCLAIMER.md
+-->
+
 <PLUGIN name="&name;" author="&author;" version="&version;"
   pluginURL="&pluginURL;" support="&support;" launch="&launch;"
   icon="&icon;" min="7.0.0">
@@ -26,6 +36,7 @@
 - Web GUI: live sensor page under Settings (PWM / RPM / temperature)
 - Validated on Unraid 7.3.2 / 6.18.38-Unraid / BIOS 1.04
 - Restores EC automatic fan mode on plugin removal or module unload
+- Community project, not affiliated with Minisforum; use at your own risk
   </CHANGES>
 
   <!-- Install: download the kernel-matched package and load the module -->

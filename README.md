@@ -188,6 +188,18 @@ Connect a physical fan to the PCIe Fan header before configuring it, then verify
 the sensor and PWM mapping in FanCtrl Plus 2. Different PCIe devices do not
 share one fixed temperature-reading mechanism.
 
+## Disclaimer
+
+This project is an independent community effort and is **not affiliated with,
+endorsed by, or supported by Minisforum**. It contains unverified factors and is
+provided "as is" without warranty of any kind. **Use at your own risk.** The
+author accepts no liability for any direct or indirect loss — including
+hardware damage, fan-stall overheating, or data loss — arising from the use of
+this driver. See [DISCLAIMER.md](DISCLAIMER.md) for the full terms.
+
+Only the fully validated N5 / F8NAA combination is supported; the driver
+refuses to load on any other hardware via its DMI guard.
+
 ## Safety
 
 - Do not force-load this module on other Minisforum models or mainboards.

@@ -2,8 +2,14 @@
 /*
  * Minisforum N5 (F8NAA) / ITE IT5571 hwmon driver.
  *
- * Reverse engineered from F8NAA EC firmware V0.14 and validated on an N5
+ * Independently explored from F8NAA EC firmware V0.14 and validated on an N5
  * running Unraid 7.3.2 / Linux 6.18.38-Unraid.
+ *
+ * DISCLAIMER: This is an independent community driver, NOT affiliated with or
+ * endorsed by Minisforum. It contains unverified factors and is provided
+ * "as is" without warranty of any kind. Use at your own risk; the author
+ * accepts no liability for any damage or loss. The DMI guard restricts
+ * loading to the validated N5 / F8NAA mainboard only — do not bypass it.
  *
  * The EC exposes four logical fan-control channels through PMC2 command 0xd5:
  *   1: CPU fan       (DCR1, TACH1)

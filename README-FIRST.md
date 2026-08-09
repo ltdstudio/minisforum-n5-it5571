@@ -1,11 +1,15 @@
 # Minisforum N5 EC / IT5571 完整开发归档
 
+> **免责声明 DISCLAIMER：** 本项目为社区爱好者独立开发，与 Minisforum（铭凡）
+> 官方无关；包含未验证因素，按“现状”提供，不作任何担保。使用即表示您自行承担
+> 全部风险。完整条款见 [DISCLAIMER.md](DISCLAIMER.md)。
+
 English summary follows the Chinese section.
 
 ## 中文说明
 
 这是截至 2026-08-08 的完整开发归档，包含 Minisforum N5/F8NAA 的 EC 风扇、
-转速和温度接口逆向成果、Linux hwmon 驱动原型、诊断工具、构建脚本、已验证
+转速和温度接口探索成果、Linux hwmon 驱动原型、诊断工具、构建脚本、已验证
 内核模块以及中英文 GitHub/Unraid 发布文案。
 
 ### 当前状态
