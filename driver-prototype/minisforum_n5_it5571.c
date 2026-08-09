@@ -579,7 +579,7 @@ static void __exit n5_exit(void)
 module_init(n5_init);
 module_exit(n5_exit);
 
-MODULE_AUTHOR("ltdstudio, reverse engineered for the Minisforum N5");
-MODULE_DESCRIPTION("Minisforum N5/F8NAA IT5571 fan and temperature hwmon driver");
+MODULE_AUTHOR("ltdstudio, community exploration for the Minisforum N5");
+MODULE_DESCRIPTION("Minisforum N5/F8NAA IT5571 fan/temp hwmon driver; community project, not affiliated with Minisforum; use at your own risk");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("0.1.0");
