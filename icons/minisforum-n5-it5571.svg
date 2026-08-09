@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e283a"/>
+      <stop offset="1" stop-color="#101622"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="184.0" fill="url(#bg)"/>
+  <g font-family="Arial, sans-serif">
+    <text x="50%" y="368.0" text-anchor="middle" font-size="84.0" font-weight="bold" fill="#96a5be" letter-spacing="4">MINISFORUM</text>
+    <text x="50%" y="574.0" text-anchor="middle" font-size="300.0" font-weight="900" fill="#f0f4fa">N5</text>
+    <text x="50%" y="788.0" text-anchor="middle" font-size="72.0" font-family="Menlo, monospace" fill="#f87171">EC / IT5571 Driver</text>
+  </g>
+  <line x1="307.0" y1="866.0" x2="717.0" y2="866.0" stroke="#38bdf8" stroke-width="6.0" stroke-linecap="round"/>
+</svg>
