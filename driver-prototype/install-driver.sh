@@ -3,9 +3,9 @@ set -euo pipefail
 
 plugin_dir=/boot/config/plugins/n5-ec-hwmon
 kernel_release=$(uname -r)
-module_source="$plugin_dir/n5_ec_hwmon-${kernel_release}.ko"
+module_source="$plugin_dir/minisforum_n5_it5571-${kernel_release}.ko"
 module_dir="/lib/modules/${kernel_release}/extra"
-module_target="$module_dir/n5_ec_hwmon.ko"
+module_target="$module_dir/minisforum_n5_it5571.ko"
 drivers_file=/boot/config/plugins/dynamix.system.temp/drivers.conf
 
 if [[ ! -f "$module_source" ]]; then
@@ -18,13 +18,13 @@ install -m 0644 "$module_source" "$module_target"
 depmod -a "$kernel_release"
 
 touch "$drivers_file"
-if ! grep -qxF n5_ec_hwmon "$drivers_file"; then
-  printf '\nn5_ec_hwmon\n' >> "$drivers_file"
+if ! grep -qxF minisforum_n5_it5571 "$drivers_file"; then
+  printf '\nminisforum_n5_it5571\n' >> "$drivers_file"
   sed -i '/^$/d' "$drivers_file"
 fi
 
-if ! lsmod | awk '{print $1}' | grep -qx n5_ec_hwmon; then
-  modprobe n5_ec_hwmon
+if ! lsmod | awk '{print $1}' | grep -qx minisforum_n5_it5571; then
+  modprobe minisforum_n5_it5571
 fi
 
 if [[ -f "$plugin_dir/pcie-autofan.conf" ]] &&
@@ -32,4 +32,4 @@ if [[ -f "$plugin_dir/pcie-autofan.conf" ]] &&
   /bin/bash "$plugin_dir/n5-pcie-autofan" start
 fi
 
-echo "n5_ec_hwmon installed for ${kernel_release}"
+echo "minisforum_n5_it5571 installed for ${kernel_release}"

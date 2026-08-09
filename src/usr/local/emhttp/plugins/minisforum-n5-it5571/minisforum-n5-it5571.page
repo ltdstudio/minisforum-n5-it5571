@@ -1,0 +1,123 @@
+Menu="Settings"
+Icon="/usr/local/emhttp/plugins/minisforum-n5-it5571/icons/minisforum-n5-it5571.png"
+Title="Minisforum N5 EC / IT5571 Driver"
+---
+<?PHP
+/* Minisforum N5 EC / IT5571 Driver — sensor status page
+ * Reads hwmon sysfs nodes exported by minisforum_n5_it5571 directly.
+ * GPL-2.0-only
+ */
+$plugin = 'minisforum-n5-it5571';
+
+function hwmon_path() {
+  foreach (glob('/sys/class/hwmon/hwmon*') ?: [] as $d) {
+    $name = @file_get_contents("$d/name");
+    if (trim($name) === 'minisforum_n5_it5571') return $d;
+  }
+  return false;
+}
+
+function read_attr($base, $attr) {
+  $v = @file_get_contents("$base/$attr");
+  return $v === false ? null : trim($v);
+}
+
+$h = hwmon_path();
+$module_loaded = is_dir($h);
+
+// Channel definitions: pwmN -> label / fanN -> label / tempN -> label
+$pwm_map = [1 => 'CPU Fan', 2 => 'SSD Fan', 3 => 'HDD Fan Group', 4 => 'PCIe Fan'];
+$temp_map = [1 => 'CPU Temp', 2 => 'System Temp', 3 => 'Board Temp', 4 => 'Ambient Temp'];
+
+$pwm_rows = [];
+for ($i = 1; $i <= 4; $i++) {
+  if (!$module_loaded) break;
+  $pwm = read_attr($h, "pwm$i");
+  $enable = read_attr($h, "pwm${i}_enable");
+  $fan = read_attr($h, "fan${i}_input");
+  $mode = match ($enable) {
+    '1' => 'Manual (software)',
+    '2' => 'EC/BIOS automatic',
+    default => $enable ?? 'n/a',
+  };
+  $pwm_rows[] = ['ch' => $i, 'label' => $pwm_map[$i] ?? "PWM $i", 'pwm' => $pwm, 'mode' => $mode, 'fan' => $fan];
+}
+
+$temp_rows = [];
+for ($i = 1; $i <= 4; $i++) {
+  if (!$module_loaded) break;
+  $t = read_attr($h, "temp${i}_input");
+  if ($t !== null) {
+    $temp_rows[] = ['label' => $temp_map[$i] ?? "Temp $i", 'c' => round($t / 1000, 1)];
+  }
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { background:#1a2233; color:#e8edf5; font-family:"Helvetica Neue",Arial,sans-serif; padding:24px; }
+h1 { font-size:20px; margin:0 0 4px; }
+.sub { color:#8fa0bd; font-size:12px; margin-bottom:20px; }
+.card { background:#222c42; border:1px solid #31405f; border-radius:8px; padding:16px 18px; margin-bottom:16px; }
+.card h2 { font-size:14px; margin:0 0 12px; color:#7dd3fc; letter-spacing:.5px; }
+table { width:100%; border-collapse:collapse; }
+th, td { text-align:left; padding:7px 10px; font-size:13px; border-bottom:1px solid #2c3854; }
+th { color:#8fa0bd; font-weight:600; font-size:12px; }
+td.num { font-family:Menlo,monospace; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; }
+.badge.bios { background:#1d4ed8; color:#bfdbfe; }
+.badge.manual { background:#b45309; color:#fde68a; }
+.badge.ok { color:#4ade80; }
+.badge.warn { color:#f87171; }
+.note { font-size:12px; color:#8fa0bd; }
+.warnbox { background:#3b2030; border:1px solid #7f1d1d; border-radius:8px; padding:14px 18px; margin-bottom:16px; color:#fca5a5; font-size:13px; }
+</style>
+</head>
+<body>
+<h1>Minisforum N5 EC / IT5571 Driver</h1>
+<div class="sub">Kernel module: minisforum_n5_it5571 &nbsp;·&nbsp; hwmon: <?= $module_loaded ? basename($h) : 'not loaded' ?></div>
+
+<? if (!$module_loaded): ?>
+  <div class="warnbox">⚠ The <b>minisforum_n5_it5571</b> kernel module is not loaded.
+  Check <tt>dmesg | grep -i n5</tt> and the plugin installation log.</div>
+<? else: ?>
+
+<div class="card">
+<h2>Fan Channels</h2>
+<table>
+<tr><th>Channel</th><th>PWM</th><th>Mode</th><th>RPM</th></tr>
+<? foreach ($pwm_rows as $r): ?>
+<tr>
+  <td><?= htmlspecialchars($r['label']) ?></td>
+  <td class="num"><?= $r['pwm'] ?? '—' ?> / 255</td>
+  <td><?= $r['mode'] === 'Manual (software)' ? '<span class="badge manual">MANUAL</span>' : '<span class="badge bios">EC/BIOS AUTO</span>' ?></td>
+  <td class="num"><?= $r['fan'] !== null ? $r['fan'].' RPM' : 'n/a' ?></td>
+</tr>
+<? endforeach; ?>
+</table>
+<div class="note">PCIe Fan has no RPM feedback on this board — zero is expected.</div>
+</div>
+
+<div class="card">
+<h2>Temperatures</h2>
+<table>
+<tr><th>Sensor</th><th>Value</th></tr>
+<? foreach ($temp_rows as $r): ?>
+<tr>
+  <td><?= htmlspecialchars($r['label']) ?></td>
+  <td class="num"><?= $r['c'] ?> °C
+    <span class="badge <?= $r['c'] >= 80 ? 'warn' : 'ok' ?>"><?= $r['c'] >= 80 ? 'HOT' : 'OK' ?></span>
+  </td>
+</tr>
+<? endforeach; ?>
+</table>
+</div>
+
+<? endif; ?>
+
+<div class="note">Fan control: use <b>FanCtrl Plus 2</b> (recommended) or Dynamix Fan Auto Control.
+Assign each PWM to one controller only. Module unload restores EC automatic mode.</div>
+</body>
+</html>

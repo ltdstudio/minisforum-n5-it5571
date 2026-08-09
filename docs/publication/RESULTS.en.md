@@ -131,7 +131,7 @@ Recommended public module name:
 minisforum_n5_it5571
 ```
 
-The validated prototype is currently named `n5_ec_hwmon`; it should be renamed
+The validated prototype is currently named `minisforum_n5_it5571`; it should be renamed
 consistently before the first public release.
 
 Exposed standard nodes:

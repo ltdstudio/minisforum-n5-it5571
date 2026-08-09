@@ -18,3 +18,4 @@ zig-out/
 
 # 构建输入（历史脚本期望 /work）
 /work/
+.github/workflows/

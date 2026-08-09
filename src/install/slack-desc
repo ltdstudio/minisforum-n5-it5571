@@ -1,0 +1,20 @@
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.
+# Line up the first '|' above the ':' following the base package name, and
+# the '|' on the right side marks the last column you can put a character in.
+# You must make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':' except on otherwise blank lines.
+
+     |-----handy-ruler------------------------------------------------------|
+minisforum-n5-it5571: Minisforum N5 EC / IT5571 Driver
+minisforum-n5-it5571:
+minisforum-n5-it5571: Hardware-specific ITE IT5571 EC/hwmon driver for the
+minisforum-n5-it5571: Minisforum N5 F8NAA mainboard. Exposes four PWM fan
+minisforum-n5-it5571: controls (CPU/SSD/HDD/PCIe), three RPM inputs and four
+minisforum-n5-it5571: EC temperatures (CPU/System/Board/Ambient).
+minisforum-n5-it5571:
+minisforum-n5-it5571: Recommended companion: FanCtrl Plus 2 (fan control)
+minisforum-n5-it5571: and Dynamix System Temperature (sensor display).
+minisforum-n5-it5571: Validated on Unraid 7.3.2 / 6.18.38-Unraid / BIOS 1.04.
+minisforum-n5-it5571:
+minisforum-n5-it5571: https://github.com/ltdstudio/minisforum-n5-it5571

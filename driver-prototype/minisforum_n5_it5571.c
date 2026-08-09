@@ -27,7 +27,7 @@
 #include <linux/string.h>
 #include <linux/types.h>
 
-#define N5_DRIVER_NAME          "n5_ec_hwmon"
+#define N5_DRIVER_NAME          "minisforum_n5_it5571"
 #define N5_EC_DATA              0x62
 #define N5_EC_STATUS_COMMAND    0x66
 #define N5_EC_READ_COMMAND      0x80
@@ -573,7 +573,7 @@ static void __exit n5_exit(void)
 module_init(n5_init);
 module_exit(n5_exit);
 
-MODULE_AUTHOR("OpenAI Codex, reverse engineered for the Minisforum N5");
+MODULE_AUTHOR("ltdstudio, reverse engineered for the Minisforum N5");
 MODULE_DESCRIPTION("Minisforum N5/F8NAA IT5571 fan and temperature hwmon driver");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("0.2.0");
+MODULE_VERSION("0.1.0");

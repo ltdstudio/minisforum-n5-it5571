@@ -12,7 +12,7 @@ English summary follows the Chinese section.
 
 - 已验证硬件：Minisforum N5、F8NAA、BIOS 1.04、ITE IT5571 C。
 - 已验证系统：Unraid 7.3.2、Linux 6.18.38-Unraid。
-- 已验证原型模块名：`n5_ec_hwmon`。
+- 已验证原型模块名：`minisforum_n5_it5571`。
 - 计划公开模块名：`minisforum_n5_it5571`。
 - 计划插件 ID：`minisforum-n5-it5571`。
 - 当前 `.ko` 仅适用于 `6.18.38-Unraid`，不能用于其他内核。
@@ -46,7 +46,7 @@ Minisforum N5/F8NAA EC fan, tachometer, and temperature research; the Linux
 hwmon driver prototype; diagnostic source; build scripts; the validated kernel
 module; and bilingual GitHub/Unraid publication drafts.
 
-The validated prototype is still named `n5_ec_hwmon`. The planned public module
+The validated prototype is still named `minisforum_n5_it5571`. The planned public module
 name is `minisforum_n5_it5571`, and the planned plugin ID is
 `minisforum-n5-it5571`. The included `.ko` is only for `6.18.38-Unraid`.
 Final public renaming, the Community Applications `.plg`, a clean rebuild, and

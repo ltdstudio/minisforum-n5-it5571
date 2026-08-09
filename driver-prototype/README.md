@@ -24,7 +24,7 @@ automatic mode.
 ## Unraid integration
 
 The deployed boot script loads the driver from
-`/boot/config/plugins/n5-ec-hwmon/` and adds `n5_ec_hwmon` to the Dynamix System
+`/boot/config/plugins/n5-ec-hwmon/` and adds `minisforum_n5_it5571` to the Dynamix System
 Temp available-driver list. Fan Auto Control discovers all four `pwmN` nodes.
 The PCIe channel deliberately exports `fan4_input=0` because the board firmware
 has no fourth tachometer signal.

@@ -1,4 +1,4 @@
-obj-m += n5_ec_hwmon.o
+obj-m += minisforum_n5_it5571.o
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
 PWD  := $(shell pwd)

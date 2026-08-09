@@ -18,4 +18,4 @@ make olddefconfig
 make prepare modules_prepare
 make M=/work/module modules
 
-modinfo /work/module/n5_ec_hwmon.ko || true
+modinfo /work/module/minisforum_n5_it5571.ko || true

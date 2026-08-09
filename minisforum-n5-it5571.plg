@@ -1,0 +1,108 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+  <!ENTITY name      "minisforum-n5-it5571">
+  <!ENTITY author    "ltdstudio">
+  <!ENTITY version   "0.1.0">
+  <!ENTITY repo      "https://github.com/ltdstudio/minisforum-n5-it5571">
+  <!ENTITY pluginURL "&repo;/raw/main/minisforum-n5-it5571.plg">
+  <!ENTITY support   "&repo;/issues">
+  <!ENTITY launch    "Settings/minisforum-n5-it5571">
+  <!ENTITY icon      "&repo;/raw/main/icons/minisforum-n5-it5571.png">
+]>
+
+<PLUGIN name="&name;" author="&author;" version="&version;"
+  pluginURL="&pluginURL;" support="&support;" launch="&launch;"
+  icon="&icon;" min="7.0.0">
+
+  <CHANGES>
+## &version;
+- Initial public release
+- Kernel module: four PWM outputs (CPU / SSD / HDD / PCIe), three RPM
+  inputs, four EC temperatures for the Minisforum N5 F8NAA mainboard
+- Web GUI: live sensor page under Settings (PWM / RPM / temperature)
+- Validated on Unraid 7.3.2 / 6.18.38-Unraid / BIOS 1.04
+- Restores EC automatic fan mode on plugin removal or module unload
+  </CHANGES>
+
+  <!-- Install: download the kernel-matched package and load the module -->
+  <FILE Run="/bin/bash">
+  <INLINE>
+#!/bin/bash
+PLUGIN="&name;"
+REPO="&repo;"
+VERSION="&version;"
+KVER=$(uname -r)
+
+echo "--- Installing ${PLUGIN} v${VERSION} for kernel ${KVER} ---"
+
+# Only N5/F8NAA boards are supported
+if ! dmidecode -s baseboard-product 2>/dev/null | grep -qi "F8NAA"; then
+  echo "ERROR: This driver only supports the Minisforum N5 (F8NAA mainboard)."
+  echo "Detected board: $(dmidecode -s baseboard-product 2>/dev/null || echo unknown)"
+  echo "Installation aborted."
+  exit 1
+fi
+
+# Download the kernel-matched Slackware package from GitHub Releases
+PKG_URL="${REPO}/releases/download/v${VERSION}/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
+PKG_FILE="/tmp/${PLUGIN}.txz"
+
+echo "Downloading ${PKG_URL} ..."
+wget -q -O "${PKG_FILE}" "${PKG_URL}"
+if [ $? -ne 0 ]; then
+  echo "ERROR: No package for kernel ${KVER}."
+  echo "Check ${REPO}/releases for available packages or report an issue."
+  rm -f "${PKG_FILE}"
+  exit 1
+fi
+
+# Install the Slackware package (reinstall allows upgrades)
+upgradepkg --install-new "${PKG_FILE}" 2>/dev/null || installpkg "${PKG_FILE}"
+rm -f "${PKG_FILE}"
+
+# Rebuild module dependency list and load the module
+depmod -a "${KVER}"
+if ! lsmod | awk '{print $1}' | grep -qx minisforum_n5_it5571; then
+  modprobe minisforum_n5_it5571 2>/dev/null || {
+    echo "WARNING: could not auto-load minisforum_n5_it5571; check dmesg."
+  }
+fi
+
+# Reload udev rules
+udevadm control --reload-rules 2>/dev/null
+udevadm trigger 2>/dev/null
+
+echo "--- ${PLUGIN} v${VERSION} installed ---"
+  </INLINE>
+  </FILE>
+
+  <!-- Removal: restore EC automatic mode and remove the package -->
+  <FILE Run="/bin/bash" Method="remove">
+  <INLINE>
+#!/bin/bash
+PLUGIN="&name;"
+
+echo "--- Removing ${PLUGIN} ---"
+
+# Restore EC automatic fan mode before unloading (safety first)
+if [ -x /usr/local/emhttp/plugins/${PLUGIN}/scripts/restore-bios.sh ]; then
+  /usr/local/emhttp/plugins/${PLUGIN}/scripts/restore-bios.sh
+fi
+
+# Unload the kernel module
+rmmod minisforum_n5_it5571 2>/dev/null
+
+# Remove the Slackware package
+removepkg "${PLUGIN}" 2>/dev/null
+
+# Rebuild module dependency list
+depmod -a
+
+# Clean up plugin config directory
+rm -rf /boot/config/plugins/${PLUGIN}
+
+echo "--- ${PLUGIN} removed ---"
+  </INLINE>
+  </FILE>
+
+</PLUGIN>

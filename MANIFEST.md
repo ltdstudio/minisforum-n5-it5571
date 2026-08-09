@@ -2,15 +2,15 @@
 
 ## `driver-prototype/`
 
-- `n5_ec_hwmon.c`: validated Linux hwmon driver prototype source.
+- `minisforum_n5_it5571.c`: validated Linux hwmon driver prototype source.
 - `Makefile`: external kernel-module build file.
 - `install-driver.sh`: prototype Unraid installation script.
 - `uninstall-driver.sh`: prototype rollback script.
-- `n5_ec_hwmon-6.18.38-Unraid.ko`: validated x86-64 module for exactly
+- `minisforum_n5_it5571-6.18.38-Unraid.ko`: validated x86-64 module for exactly
   `6.18.38-Unraid`.
 - `README.md`: original prototype package notes.
 
-The prototype uses the old name `n5_ec_hwmon`; it has not yet been renamed and
+The prototype uses the old name `minisforum_n5_it5571`; it has not yet been renamed and
 rebuilt as `minisforum_n5_it5571`.
 
 ## `research-tools/`
