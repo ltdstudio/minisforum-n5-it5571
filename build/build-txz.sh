@@ -20,13 +20,19 @@ trap 'rm -rf "$WORK"' EXIT
 
 # ── 1. WebGUI files ────────────────────────────────────────────────
 mkdir -p "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts" \
-         "$WORK/usr/local/emhttp/plugins/$PLUGIN/icons"
+         "$WORK/usr/local/emhttp/plugins/$PLUGIN/icons" \
+         "$WORK/usr/local/emhttp/plugins/$PLUGIN/images"
 cp "$SRC/src/usr/local/emhttp/plugins/$PLUGIN/minisforum-n5-it5571.page" \
+   "$WORK/usr/local/emhttp/plugins/$PLUGIN/"
+cp "$SRC/src/usr/local/emhttp/plugins/$PLUGIN/minisforum-n5-it5571.php" \
    "$WORK/usr/local/emhttp/plugins/$PLUGIN/"
 cp "$SRC/src/usr/local/emhttp/plugins/$PLUGIN/scripts/restore-bios.sh" \
    "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts/"
+# icons/  -> sidebar menu (tab_title); images/ -> Settings panel (MainContent)
 cp "$SRC/icons/minisforum-n5-it5571.png" \
    "$WORK/usr/local/emhttp/plugins/$PLUGIN/icons/"
+cp "$SRC/icons/minisforum-n5-it5571.png" \
+   "$WORK/usr/local/emhttp/plugins/$PLUGIN/images/"
 
 # ── 2. Kernel module ───────────────────────────────────────────────
 mkdir -p "$WORK/lib/modules/$KVER/extra"

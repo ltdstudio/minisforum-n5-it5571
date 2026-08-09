@@ -3,12 +3,11 @@ Icon="minisforum-n5-it5571.png"
 Title="Minisforum N5 EC / IT5571 Driver"
 ---
 <?PHP
-/* Minisforum N5 EC / IT5571 Driver — sensor status page
- * Reads hwmon sysfs nodes exported by minisforum_n5_it5571 directly.
+/* Minisforum N5 EC / IT5571 Driver — sensor status page (bilingual, live-updating)
+ * Polls the standalone JSON endpoint (minisforum-n5-it5571.php) every 3s.
  * Theme-aware: follows the Unraid WebGUI light/dark appearance.
  * GPL-2.0-only
  */
-$plugin = 'minisforum-n5-it5571';
 
 function hwmon_path() {
   foreach (glob('/sys/class/hwmon/hwmon*') ?: [] as $d) {
@@ -23,41 +22,48 @@ function read_attr($base, $attr) {
   return $v === false ? null : trim($v);
 }
 
-$h = hwmon_path();
-$module_loaded = is_dir($h);
-
-$pwm_map = [1 => 'CPU Fan', 2 => 'SSD Fan', 3 => 'HDD Fan Group', 4 => 'PCIe Fan'];
-$temp_map = [1 => 'CPU Temp', 2 => 'System Temp', 3 => 'Board Temp', 4 => 'Ambient Temp'];
-
-$pwm_rows = [];
-for ($i = 1; $i <= 4; $i++) {
-  if (!$module_loaded) break;
-  $pwm = read_attr($h, "pwm$i");
-  $enable = read_attr($h, "pwm${i}_enable");
-  $fan = read_attr($h, "fan${i}_input");
-  $mode = match ($enable) {
-    '1' => 'manual',
-    '2' => 'bios',
-    default => null,
-  };
-  $pwm_rows[] = ['ch' => $i, 'label' => $pwm_map[$i] ?? "PWM $i", 'pwm' => $pwm, 'mode' => $mode, 'fan' => $fan];
-}
-
-$temp_rows = [];
-for ($i = 1; $i <= 4; $i++) {
-  if (!$module_loaded) break;
-  $t = read_attr($h, "temp${i}_input");
-  if ($t !== null) {
-    $temp_rows[] = ['label' => $temp_map[$i] ?? "Temp $i", 'c' => round($t / 1000, 1)];
+function sensor_data() {
+  $h = hwmon_path();
+  $pwm_map = [1 => ['zh' => 'CPU 风扇', 'en' => 'CPU Fan'],
+              2 => ['zh' => 'SSD 风扇', 'en' => 'SSD Fan'],
+              3 => ['zh' => 'HDD 风扇组', 'en' => 'HDD Fan Group'],
+              4 => ['zh' => 'PCIe 风扇', 'en' => 'PCIe Fan']];
+  $temp_map = [1 => ['zh' => 'CPU 温度', 'en' => 'CPU Temp'],
+               2 => ['zh' => '系统温度', 'en' => 'System Temp'],
+               3 => ['zh' => '主板温度', 'en' => 'Board Temp'],
+               4 => ['zh' => '环境温度', 'en' => 'Ambient Temp']];
+  $out = ['loaded' => is_dir($h), 'hwmon' => is_dir($h) ? basename($h) : null, 'pwm' => [], 'temp' => []];
+  if (!is_dir($h)) return $out;
+  for ($i = 1; $i <= 4; $i++) {
+    $pwm = read_attr($h, "pwm$i");
+    $enable = read_attr($h, "pwm${i}_enable");
+    $fan = read_attr($h, "fan${i}_input");
+    $mode = match ($enable) { '1' => 'manual', '2' => 'bios', default => null };
+    $out['pwm'][] = ['label' => $pwm_map[$i], 'pwm' => $pwm, 'mode' => $mode, 'fan' => $fan];
   }
+  for ($i = 1; $i <= 4; $i++) {
+    $t = read_attr($h, "temp${i}_input");
+    if ($t !== null) $out['temp'][] = ['label' => $temp_map[$i], 'c' => round($t / 1000, 1)];
+  }
+  return $out;
 }
+
+// JSON API mode (polled by the frontend)
+if (isset($_GET['format']) && $_GET['format'] === 'json') {
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  echo json_encode(sensor_data(), JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
+$data = sensor_data();
+$loaded = $data['loaded'];
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <style>
-/* Theme-aware: use CSS variables that follow the Unraid WebGUI palette */
 :root {
   --pg-bg: var(--body-bg, #ffffff);
   --pg-fg: var(--font-color, #1d1b1b);
@@ -81,29 +87,15 @@ for ($i = 1; $i <= 4; $i++) {
   }
 }
 * { box-sizing: border-box; }
-body {
-  margin: 0;
-  padding: 24px;
-  background: var(--pg-bg);
-  color: var(--pg-fg);
-  font-family: "Helvetica Neue", Arial, sans-serif;
-}
-h1 { font-size: 20px; margin: 0 0 4px; color: var(--pg-fg); }
+body { margin: 0; padding: 24px; background: var(--pg-bg); color: var(--pg-fg);
+  font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+h1 { font-size: 20px; margin: 0 0 4px; }
 .sub { color: var(--pg-muted); font-size: 12px; margin-bottom: 20px; }
-.card {
-  background: var(--pg-card-bg);
-  border: 1px solid var(--pg-border);
-  border-radius: 8px;
-  padding: 16px 18px;
-  margin-bottom: 16px;
-}
+.card { background: var(--pg-card-bg); border: 1px solid var(--pg-border); border-radius: 8px;
+  padding: 16px 18px; margin-bottom: 16px; }
 .card h2 { font-size: 14px; margin: 0 0 12px; color: var(--pg-accent); letter-spacing: .5px; }
 table { width: 100%; border-collapse: collapse; }
-th, td {
-  text-align: left; padding: 7px 10px; font-size: 13px;
-  border-bottom: 1px solid var(--pg-border);
-  color: var(--pg-fg);
-}
+th, td { text-align: left; padding: 7px 10px; font-size: 13px; border-bottom: 1px solid var(--pg-border); }
 th { color: var(--pg-muted); font-weight: 600; font-size: 12px; }
 td.num { font-family: Menlo, monospace; }
 .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
@@ -112,61 +104,113 @@ td.num { font-family: Menlo, monospace; }
 .badge.ok { color: var(--pg-ok); }
 .badge.warn { color: var(--pg-hot); }
 .note { font-size: 12px; color: var(--pg-muted); }
-.warnbox {
-  background: color-mix(in srgb, var(--pg-hot) 12%, var(--pg-bg));
-  border: 1px solid var(--pg-hot);
-  border-radius: 8px;
-  padding: 14px 18px;
-  margin-bottom: 16px;
-  color: var(--pg-hot);
-  font-size: 13px;
-}
+.warnbox { background: color-mix(in srgb, var(--pg-hot) 12%, var(--pg-bg));
+  border: 1px solid var(--pg-hot); border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;
+  color: var(--pg-hot); font-size: 13px; }
 tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
+.lang { color: var(--pg-muted); font-size: 11px; font-weight: 400; }
+.footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--pg-border);
+  font-size: 12px; color: var(--pg-muted); }
+.footer a { color: var(--pg-accent); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.footer b { color: var(--pg-fg); }
 </style>
 </head>
 <body>
 <h1>Minisforum N5 EC / IT5571 Driver</h1>
-<div class="sub">Kernel module: minisforum_n5_it5571 &nbsp;·&nbsp; hwmon: <?= $module_loaded ? basename($h) : 'not loaded' ?></div>
+<div class="sub">
+  内核模块 Kernel module: <b>minisforum_n5_it5571</b> &nbsp;·&nbsp;
+  hwmon: <span id="hwmon-id"><?= $loaded ? basename($data['hwmon']) : 'not loaded / 未加载' ?></span>
+</div>
 
-<? if (!$module_loaded): ?>
-  <div class="warnbox">⚠ The <b>minisforum_n5_it5571</b> kernel module is not loaded.
-  Check <tt>dmesg | grep -i minisforum</tt> and the plugin installation log.</div>
+<? if (!$loaded): ?>
+  <div class="warnbox">⚠ 内核模块未加载 The <b>minisforum_n5_it5571</b> kernel module is not loaded.
+  请检查 Check <tt>dmesg | grep -i minisforum</tt> 与插件安装日志 and the plugin installation log.</div>
 <? else: ?>
 
 <div class="card">
-<h2>Fan Channels</h2>
-<table>
-<tr><th>Channel</th><th>PWM</th><th>Mode</th><th>RPM</th></tr>
-<? foreach ($pwm_rows as $r): ?>
-<tr>
-  <td><?= htmlspecialchars($r['label']) ?></td>
-  <td class="num"><?= $r['pwm'] ?? '—' ?> / 255</td>
-  <td><?= $r['mode'] === 'manual' ? '<span class="badge manual">MANUAL</span>' : ($r['mode'] === 'bios' ? '<span class="badge bios">EC/BIOS AUTO</span>' : 'n/a') ?></td>
-  <td class="num"><?= $r['fan'] !== null ? $r['fan'].' RPM' : 'n/a' ?></td>
+<h2>风扇通道 Fan Channels</h2>
+<table id="pwm-table">
+<thead><tr>
+  <th>通道 Channel</th><th>PWM</th><th>模式 Mode</th><th>转速 RPM</th>
+</tr></thead>
+<tbody>
+<? foreach ($data['pwm'] as $r): ?>
+<tr data-ch="<?= $r['label']['en'] ?>">
+  <td><?= htmlspecialchars($r['label']['zh']) ?> <span class="lang"><?= htmlspecialchars($r['label']['en']) ?></span></td>
+  <td class="num pwm"><?= $r['pwm'] ?? '—' ?> / 255</td>
+  <td class="mode"><?= $r['mode'] === 'manual' ? '<span class="badge manual">手动 / 被其他软件接管 Manual / Software takeover</span>' : ($r['mode'] === 'bios' ? '<span class="badge bios">EC/BIOS 自动 Auto</span>' : '—') ?></td>
+  <td class="num fan"><?= $r['fan'] !== null ? $r['fan'].' RPM' : '—' ?></td>
 </tr>
 <? endforeach; ?>
+</tbody>
 </table>
-<div class="note">PCIe Fan has no RPM feedback on this board — zero is expected.</div>
+<div class="note">PCIe 风扇无转速反馈（该主板固件未开放）PCIe Fan has no RPM feedback on this board — zero is expected.</div>
 </div>
 
 <div class="card">
-<h2>Temperatures</h2>
-<table>
-<tr><th>Sensor</th><th>Value</th></tr>
-<? foreach ($temp_rows as $r): ?>
-<tr>
-  <td><?= htmlspecialchars($r['label']) ?></td>
-  <td class="num"><?= $r['c'] ?> °C
-    <span class="badge <?= $r['c'] >= 80 ? 'warn' : 'ok' ?>"><?= $r['c'] >= 80 ? 'HOT' : 'OK' ?></span>
+<h2>温度 Temperatures</h2>
+<table id="temp-table">
+<thead><tr><th>传感器 Sensor</th><th>数值 Value</th></tr></thead>
+<tbody>
+<? foreach ($data['temp'] as $r): ?>
+<tr data-temp="<?= $r['label']['en'] ?>">
+  <td><?= htmlspecialchars($r['label']['zh']) ?> <span class="lang"><?= htmlspecialchars($r['label']['en']) ?></span></td>
+  <td class="num temp"><span class="tval"><?= $r['c'] ?></span> °C
+    <span class="badge <?= $r['c'] >= 80 ? 'warn' : 'ok' ?>"><?= $r['c'] >= 80 ? '过热 HOT' : '正常 OK' ?></span>
   </td>
 </tr>
 <? endforeach; ?>
+</tbody>
 </table>
 </div>
 
 <? endif; ?>
 
-<div class="note">Fan control: use <b>FanCtrl Plus 2</b> (recommended) or Dynamix Fan Auto Control.
-Assign each PWM to one controller only. Module unload restores EC automatic mode.</div>
+<div class="note">
+  风扇控制建议使用 Fan control: <b>FanCtrl Plus 2</b>（推荐 recommended）或 Dynamix Fan Auto Control。
+  每路 PWM 只交给一个控制器 Assign each PWM to one controller only。
+  模块卸载自动恢复 EC 自动模式 Module unload restores EC automatic mode.
+</div>
+
+<div class="footer">
+  <a href="https://github.com/ltdstudio/minisforum-n5-it5571" target="_blank" rel="noopener">GitHub</a>
+  &nbsp;·&nbsp; <a href="https://github.com/ltdstudio/minisforum-n5-it5571/issues" target="_blank" rel="noopener">提交 Bug 报告 Report a bug</a>
+  &nbsp;·&nbsp; Powered by <b>ltdstudio</b>
+  &nbsp;·&nbsp; v0.1.0
+</div>
+
+<script>
+// Live refresh: poll the standalone JSON endpoint every 3s, update in place.
+(function () {
+  var url = '/plugins/minisforum-n5-it5571/minisforum-n5-it5571.php';
+  function refresh() {
+    fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.loaded) return;
+      var hw = document.getElementById('hwmon-id');
+      if (hw && d.hwmon) hw.textContent = d.hwmon;
+      var rows = document.querySelectorAll('#pwm-table tbody tr');
+      d.pwm.forEach(function (p, i) {
+        var tr = rows[i]; if (!tr) return;
+        var pwm = tr.querySelector('.pwm'); if (pwm) pwm.textContent = (p.pwm ?? '—') + ' / 255';
+        var fan = tr.querySelector('.fan'); if (fan) fan.textContent = p.fan !== null ? p.fan + ' RPM' : '—';
+        var mode = tr.querySelector('.mode');
+        if (mode) mode.innerHTML = p.mode === 'manual' ? '<span class="badge manual">手动 / 被其他软件接管 Manual / Software takeover</span>'
+          : (p.mode === 'bios' ? '<span class="badge bios">EC/BIOS 自动 Auto</span>' : '—');
+      });
+      var trows = document.querySelectorAll('#temp-table tbody tr');
+      d.temp.forEach(function (t, i) {
+        var tr = trows[i]; if (!tr) return;
+        var tv = tr.querySelector('.tval'); if (tv) tv.textContent = t.c;
+        var b = tr.querySelector('.badge');
+        if (b) { b.textContent = t.c >= 80 ? '过热 HOT' : '正常 OK';
+          b.className = 'badge ' + (t.c >= 80 ? 'warn' : 'ok'); }
+      });
+    }).catch(function () { /* transient; retry next tick */ });
+  }
+  setInterval(refresh, 3000);
+  setTimeout(refresh, 500); // quick first poll
+})();
+</script>
 </body>
 </html>
