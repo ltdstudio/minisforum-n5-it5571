@@ -24,6 +24,22 @@
   四路 EC 温度。
 - 模块卸载或服务停止时恢复 EC/BIOS 自动控制。
 
+## 截图 Screenshots
+
+实机截图（验证环境：Unraid 7.3.2，内核 6.18.38-Unraid）。
+
+**插件状态页** — 四路风扇通道（PWM / 模式 / 转速）与四路 EC 温度：
+
+![插件状态页](screenshots/plugin-page.png)
+
+**Dynamix System Temperature** — 驱动提供的 CPU、主板与阵列风扇传感器：
+
+![Dynamix System Temperature](screenshots/system-temperature.png)
+
+**FanCtrl Plus 2** — 四区 PWM 控制，绑定驱动的 `pwm1`–`pwm4`：
+
+![FanCtrl Plus 2](screenshots/fanctrlplus2.png)
+
 ## 兼容性
 
 | 项目 | 已验证版本 |

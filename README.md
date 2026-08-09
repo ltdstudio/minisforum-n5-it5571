@@ -25,6 +25,22 @@ and four EC temperature sensors to Unraid.
   System, Board, and Ambient EC sensors.
 - Automatic restoration of native EC/BIOS control on exit or module unload.
 
+## Screenshots
+
+Real captures from the validation system (Unraid 7.3.2, kernel 6.18.38-Unraid).
+
+**Plugin status page** — four fan channels with PWM, mode, and RPM, plus four EC temperatures:
+
+![Plugin status page](screenshots/plugin-page.png)
+
+**Dynamix System Temperature** — the driver's CPU, board, and array-fan sensors selected for display:
+
+![Dynamix System Temperature](screenshots/system-temperature.png)
+
+**FanCtrl Plus 2** — four-zone PWM control bound to the driver's `pwm1`–`pwm4`:
+
+![FanCtrl Plus 2](screenshots/fanctrlplus2.png)
+
 ## Compatibility
 
 | Item | Validated version |
