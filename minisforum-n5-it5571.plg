@@ -35,10 +35,11 @@ KVER=$(uname -r)
 
 echo "--- Installing ${PLUGIN} v${VERSION} for kernel ${KVER} ---"
 
-# Only N5/F8NAA boards are supported
-if ! dmidecode -s baseboard-product 2>/dev/null | grep -qi "F8NAA"; then
+# Only N5/F8NAA boards are supported (sysfs DMI — works on all Unraid versions)
+BOARD=$(cat /sys/class/dmi/id/board_name 2>/dev/null || echo unknown)
+if ! echo "$BOARD" | grep -qi "F8NAA"; then
   echo "ERROR: This driver only supports the Minisforum N5 (F8NAA mainboard)."
-  echo "Detected board: $(dmidecode -s baseboard-product 2>/dev/null || echo unknown)"
+  echo "Detected board: ${BOARD}"
   echo "Installation aborted."
   exit 1
 fi

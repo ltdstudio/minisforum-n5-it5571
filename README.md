@@ -1,5 +1,9 @@
 # Minisforum N5 EC / IT5571 Driver for Unraid
 
+<p align="center">
+  <img src="icons/minisforum-n5-it5571-512.png" width="256" alt="Minisforum N5 EC / IT5571 Driver">
+</p>
+
 
 English | [简体中文](README.zh-CN.md)
 
