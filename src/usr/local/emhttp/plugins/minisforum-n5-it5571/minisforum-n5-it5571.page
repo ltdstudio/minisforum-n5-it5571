@@ -174,6 +174,8 @@ tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
   模块卸载自动恢复 EC 自动模式 Module unload restores EC automatic mode.
 </div>
 
+<div class="warnbox">⚠ 免责声明：本插件为社区爱好者非官方开发，与 Minisforum（铭凡）官方无关；包含未验证因素，按“现状”提供，不作任何担保。使用即表示您自行承担全部风险，作者不对任何直接或间接损失（包括硬件损坏、风扇停转过热、数据丢失）承担责任。完整条款：<a href="https://github.com/ltdstudio/minisforum-n5-it5571/blob/main/DISCLAIMER.md" target="_blank" rel="noopener">DISCLAIMER.md</a></div>
+
 <div class="footer">
   <a href="https://github.com/ltdstudio/minisforum-n5-it5571" target="_blank" rel="noopener">GitHub</a>
   &nbsp;·&nbsp; <a href="https://github.com/ltdstudio/minisforum-n5-it5571/issues" target="_blank" rel="noopener">提交 Bug 报告 Report a bug</a>
@@ -202,10 +204,11 @@ tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
       var trows = document.querySelectorAll('#temp-table tbody tr');
       d.temp.forEach(function (t, i) {
         var tr = trows[i]; if (!tr) return;
-        var tv = tr.querySelector('.tval'); if (tv) tv.textContent = t.c;
+        var v = (t !== null && typeof t === 'object') ? t.c : t; // 兼容 {c} 与纯数字
+        var tv = tr.querySelector('.tval'); if (tv) tv.textContent = v;
         var b = tr.querySelector('.badge');
-        if (b) { b.textContent = t.c >= 80 ? '过热 HOT' : '正常 OK';
-          b.className = 'badge ' + (t.c >= 80 ? 'warn' : 'ok'); }
+        if (b) { b.textContent = v >= 80 ? '过热 HOT' : '正常 OK';
+          b.className = 'badge ' + (v >= 80 ? 'warn' : 'ok'); }
       });
     }).catch(function () { /* transient; retry next tick */ });
   }
