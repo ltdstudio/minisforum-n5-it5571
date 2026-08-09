@@ -5,6 +5,7 @@ Title="Minisforum N5 EC / IT5571 Driver"
 <?PHP
 /* Minisforum N5 EC / IT5571 Driver — sensor status page
  * Reads hwmon sysfs nodes exported by minisforum_n5_it5571 directly.
+ * Theme-aware: follows the Unraid WebGUI light/dark appearance.
  * GPL-2.0-only
  */
 $plugin = 'minisforum-n5-it5571';
@@ -25,7 +26,6 @@ function read_attr($base, $attr) {
 $h = hwmon_path();
 $module_loaded = is_dir($h);
 
-// Channel definitions: pwmN -> label / fanN -> label / tempN -> label
 $pwm_map = [1 => 'CPU Fan', 2 => 'SSD Fan', 3 => 'HDD Fan Group', 4 => 'PCIe Fan'];
 $temp_map = [1 => 'CPU Temp', 2 => 'System Temp', 3 => 'Board Temp', 4 => 'Ambient Temp'];
 
@@ -36,9 +36,9 @@ for ($i = 1; $i <= 4; $i++) {
   $enable = read_attr($h, "pwm${i}_enable");
   $fan = read_attr($h, "fan${i}_input");
   $mode = match ($enable) {
-    '1' => 'Manual (software)',
-    '2' => 'EC/BIOS automatic',
-    default => $enable ?? 'n/a',
+    '1' => 'manual',
+    '2' => 'bios',
+    default => null,
   };
   $pwm_rows[] = ['ch' => $i, 'label' => $pwm_map[$i] ?? "PWM $i", 'pwm' => $pwm, 'mode' => $mode, 'fan' => $fan];
 }
@@ -57,22 +57,71 @@ for ($i = 1; $i <= 4; $i++) {
 <head>
 <meta charset="utf-8">
 <style>
-body { background:#1a2233; color:#e8edf5; font-family:"Helvetica Neue",Arial,sans-serif; padding:24px; }
-h1 { font-size:20px; margin:0 0 4px; }
-.sub { color:#8fa0bd; font-size:12px; margin-bottom:20px; }
-.card { background:#222c42; border:1px solid #31405f; border-radius:8px; padding:16px 18px; margin-bottom:16px; }
-.card h2 { font-size:14px; margin:0 0 12px; color:#7dd3fc; letter-spacing:.5px; }
-table { width:100%; border-collapse:collapse; }
-th, td { text-align:left; padding:7px 10px; font-size:13px; border-bottom:1px solid #2c3854; }
-th { color:#8fa0bd; font-weight:600; font-size:12px; }
-td.num { font-family:Menlo,monospace; }
-.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; }
-.badge.bios { background:#1d4ed8; color:#bfdbfe; }
-.badge.manual { background:#b45309; color:#fde68a; }
-.badge.ok { color:#4ade80; }
-.badge.warn { color:#f87171; }
-.note { font-size:12px; color:#8fa0bd; }
-.warnbox { background:#3b2030; border:1px solid #7f1d1d; border-radius:8px; padding:14px 18px; margin-bottom:16px; color:#fca5a5; font-size:13px; }
+/* Theme-aware: use CSS variables that follow the Unraid WebGUI palette */
+:root {
+  --pg-bg: var(--body-bg, #ffffff);
+  --pg-fg: var(--font-color, #1d1b1b);
+  --pg-muted: var(--muted-color, #6b7280);
+  --pg-card-bg: var(--card-bg, #f3f4f6);
+  --pg-border: var(--card-border, #e5e7eb);
+  --pg-accent: var(--blue-500, #3b82f6);
+  --pg-hot: var(--red-500, #ef4444);
+  --pg-ok: var(--green-500, #22c55e);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pg-bg: #1a2233;
+    --pg-fg: #e8edf5;
+    --pg-muted: #8fa0bd;
+    --pg-card-bg: #222c42;
+    --pg-border: #31405f;
+    --pg-accent: #7dd3fc;
+    --pg-hot: #f87171;
+    --pg-ok: #4ade80;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--pg-bg);
+  color: var(--pg-fg);
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+h1 { font-size: 20px; margin: 0 0 4px; color: var(--pg-fg); }
+.sub { color: var(--pg-muted); font-size: 12px; margin-bottom: 20px; }
+.card {
+  background: var(--pg-card-bg);
+  border: 1px solid var(--pg-border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.card h2 { font-size: 14px; margin: 0 0 12px; color: var(--pg-accent); letter-spacing: .5px; }
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left; padding: 7px 10px; font-size: 13px;
+  border-bottom: 1px solid var(--pg-border);
+  color: var(--pg-fg);
+}
+th { color: var(--pg-muted); font-weight: 600; font-size: 12px; }
+td.num { font-family: Menlo, monospace; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge.bios { background: #1d4ed8; color: #bfdbfe; }
+.badge.manual { background: #b45309; color: #fde68a; }
+.badge.ok { color: var(--pg-ok); }
+.badge.warn { color: var(--pg-hot); }
+.note { font-size: 12px; color: var(--pg-muted); }
+.warnbox {
+  background: color-mix(in srgb, var(--pg-hot) 12%, var(--pg-bg));
+  border: 1px solid var(--pg-hot);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  color: var(--pg-hot);
+  font-size: 13px;
+}
+tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -81,7 +130,7 @@ td.num { font-family:Menlo,monospace; }
 
 <? if (!$module_loaded): ?>
   <div class="warnbox">⚠ The <b>minisforum_n5_it5571</b> kernel module is not loaded.
-  Check <tt>dmesg | grep -i n5</tt> and the plugin installation log.</div>
+  Check <tt>dmesg | grep -i minisforum</tt> and the plugin installation log.</div>
 <? else: ?>
 
 <div class="card">
@@ -92,7 +141,7 @@ td.num { font-family:Menlo,monospace; }
 <tr>
   <td><?= htmlspecialchars($r['label']) ?></td>
   <td class="num"><?= $r['pwm'] ?? '—' ?> / 255</td>
-  <td><?= $r['mode'] === 'Manual (software)' ? '<span class="badge manual">MANUAL</span>' : '<span class="badge bios">EC/BIOS AUTO</span>' ?></td>
+  <td><?= $r['mode'] === 'manual' ? '<span class="badge manual">MANUAL</span>' : ($r['mode'] === 'bios' ? '<span class="badge bios">EC/BIOS AUTO</span>' : 'n/a') ?></td>
   <td class="num"><?= $r['fan'] !== null ? $r['fan'].' RPM' : 'n/a' ?></td>
 </tr>
 <? endforeach; ?>
