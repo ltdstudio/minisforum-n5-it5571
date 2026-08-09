@@ -1,0 +1,139 @@
+#!/bin/bash
+set -euo pipefail
+
+plugin_dir=/boot/config/plugins/n5-ec-hwmon
+config_file="$plugin_dir/pcie-autofan.conf"
+pid_file=/run/n5-pcie-autofan.pid
+log_file=/var/log/n5-pcie-autofan.log
+
+load_config() {
+  ENABLE=0
+  TEMP_INPUT=""
+  TEMP_HWMON_NAME=""
+  TEMP_CHANNEL=temp1_input
+  TEMP_LOW=45
+  TEMP_HIGH=75
+  PWM_LOW=80
+  PWM_HIGH=255
+  INTERVAL=10
+  [[ -r "$config_file" ]] && source "$config_file"
+}
+
+find_n5_hwmon() {
+  local name_file
+  for name_file in /sys/class/hwmon/hwmon*/name; do
+    [[ -r "$name_file" ]] || continue
+    if [[ $(<"$name_file") == n5_ec_hwmon ]]; then
+      dirname "$name_file"
+      return 0
+    fi
+  done
+  return 1
+}
+
+find_temp_input() {
+  local name_file candidate
+  if [[ -n "$TEMP_INPUT" && -r "$TEMP_INPUT" ]]; then
+    printf '%s\n' "$TEMP_INPUT"
+    return 0
+  fi
+  [[ -n "$TEMP_HWMON_NAME" ]] || return 1
+  for name_file in /sys/class/hwmon/hwmon*/name; do
+    [[ -r "$name_file" ]] || continue
+    if [[ $(<"$name_file") == "$TEMP_HWMON_NAME" ]]; then
+      candidate="$(dirname "$name_file")/$TEMP_CHANNEL"
+      if [[ -r "$candidate" ]]; then
+        printf '%s\n' "$candidate"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+run_controller() {
+  local n5_hwmon pwm enable temp_path temp_mc temp_c target last_target=-1
+  load_config
+  [[ "$ENABLE" == 1 ]] || { echo "PCIe auto fan is disabled in $config_file" >&2; exit 2; }
+
+  n5_hwmon=$(find_n5_hwmon) || { echo "n5_ec_hwmon is not loaded" >&2; exit 1; }
+  pwm="$n5_hwmon/pwm4"
+  enable="$n5_hwmon/pwm4_enable"
+
+  cleanup() {
+    printf '2\n' > "$enable" 2>/dev/null || true
+    rm -f -- "$pid_file"
+  }
+  trap cleanup EXIT
+  trap 'exit 0' INT TERM
+  printf '%s\n' "$$" > "$pid_file"
+  printf '1\n' > "$enable"
+
+  while true; do
+    temp_path=$(find_temp_input || true)
+    if [[ -z "$temp_path" ]] || ! temp_mc=$(<"$temp_path") ||
+       [[ ! "$temp_mc" =~ ^-?[0-9]+$ ]]; then
+      target=$PWM_HIGH
+      logger -t n5-pcie-autofan "temperature source unavailable; forcing PCIe PWM to $target"
+    else
+      temp_c=$((temp_mc / 1000))
+      if (( temp_c <= TEMP_LOW )); then
+        target=$PWM_LOW
+      elif (( temp_c >= TEMP_HIGH )); then
+        target=$PWM_HIGH
+      else
+        target=$((PWM_LOW + (temp_c - TEMP_LOW) * (PWM_HIGH - PWM_LOW) / (TEMP_HIGH - TEMP_LOW)))
+      fi
+    fi
+    if (( target != last_target )); then
+      printf '%s\n' "$target" > "$pwm"
+      logger -t n5-pcie-autofan "source=${temp_path:-missing} temp=${temp_c:-NA}C pwm4=$target"
+      last_target=$target
+    fi
+    sleep "$INTERVAL"
+  done
+}
+
+start_controller() {
+  load_config
+  [[ "$ENABLE" == 1 ]] || { echo "PCIe auto fan remains disabled"; return 0; }
+  if [[ -r "$pid_file" ]] && kill -0 "$(<"$pid_file")" 2>/dev/null; then
+    echo "PCIe auto fan is already running"
+    return 0
+  fi
+  nohup /bin/bash "$0" run >> "$log_file" 2>&1 &
+  sleep 1
+  [[ -r "$pid_file" ]] && echo "PCIe auto fan started" || { tail -20 "$log_file" >&2; return 1; }
+}
+
+stop_controller() {
+  local pid n5_hwmon
+  if [[ -r "$pid_file" ]] && kill -0 "$(<"$pid_file")" 2>/dev/null; then
+    pid=$(<"$pid_file")
+    kill "$pid"
+    for _ in {1..20}; do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 0.1
+    done
+  fi
+  rm -f -- "$pid_file"
+  if n5_hwmon=$(find_n5_hwmon); then
+    printf '2\n' > "$n5_hwmon/pwm4_enable"
+  fi
+  echo "PCIe auto fan stopped; EC automatic mode restored"
+}
+
+case "${1:-status}" in
+  run) run_controller ;;
+  start) start_controller ;;
+  stop) stop_controller ;;
+  restart) stop_controller; start_controller ;;
+  status)
+    if [[ -r "$pid_file" ]] && kill -0 "$(<"$pid_file")" 2>/dev/null; then
+      echo "running pid=$(<"$pid_file")"
+    else
+      echo "stopped"
+    fi
+    ;;
+  *) echo "Usage: $0 {start|stop|restart|status}" >&2; exit 2 ;;
+esac

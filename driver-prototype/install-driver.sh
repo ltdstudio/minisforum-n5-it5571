@@ -1,0 +1,35 @@
+#!/bin/bash
+set -euo pipefail
+
+plugin_dir=/boot/config/plugins/n5-ec-hwmon
+kernel_release=$(uname -r)
+module_source="$plugin_dir/n5_ec_hwmon-${kernel_release}.ko"
+module_dir="/lib/modules/${kernel_release}/extra"
+module_target="$module_dir/n5_ec_hwmon.ko"
+drivers_file=/boot/config/plugins/dynamix.system.temp/drivers.conf
+
+if [[ ! -f "$module_source" ]]; then
+  echo "N5 driver does not support running kernel ${kernel_release}: $module_source is missing" >&2
+  exit 1
+fi
+
+mkdir -p "$module_dir" "$(dirname "$drivers_file")"
+install -m 0644 "$module_source" "$module_target"
+depmod -a "$kernel_release"
+
+touch "$drivers_file"
+if ! grep -qxF n5_ec_hwmon "$drivers_file"; then
+  printf '\nn5_ec_hwmon\n' >> "$drivers_file"
+  sed -i '/^$/d' "$drivers_file"
+fi
+
+if ! lsmod | awk '{print $1}' | grep -qx n5_ec_hwmon; then
+  modprobe n5_ec_hwmon
+fi
+
+if [[ -f "$plugin_dir/pcie-autofan.conf" ]] &&
+   grep -Eq '^[[:space:]]*ENABLE=1([[:space:]]*(#.*)?)?$' "$plugin_dir/pcie-autofan.conf"; then
+  /bin/bash "$plugin_dir/n5-pcie-autofan" start
+fi
+
+echo "n5_ec_hwmon installed for ${kernel_release}"

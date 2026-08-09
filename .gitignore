@@ -1,0 +1,20 @@
+# 本地开发痕迹
+.DS_Store
+._*
+*.log
+
+# 编译中间产物（注意：driver-prototype/*.ko 是已验证交付物，保留入库）
+*.o
+*.mod
+*.mod.c
+*.cmd
+*.symvers
+Module.symvers
+modules.order
+.kernel*
+zig-cache/
+zig-out/
+.cache/
+
+# 构建输入（历史脚本期望 /work）
+/work/
