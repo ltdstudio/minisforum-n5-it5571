@@ -7,8 +7,8 @@
 
 [English](README.md) | 简体中文
 
-`minisforum_n5_it5571` 是面向 Minisforum N5（F8NAA 主板、ITE IT5571 EC）的 Linux hwmon
-内核驱动，为 Unraid 提供四路风扇 PWM、三路真实转速和四路 EC 温度。
+`minisforum_n5_it5571` 是面向 Minisforum N5 系列及其 ITE IT5571 EC 的 Linux
+hwmon 驱动。N5/F8NAA 已完成实机验证；N5 Pro/F8NAA 与 N5 Air/F8NAB 为实验性配置。
 
 ## 功能
 
@@ -42,25 +42,45 @@
 
 ## 兼容性
 
-| 项目 | 已验证版本 |
-|---|---|
-| 设备 | Minisforum N5 |
-| 主板 | F8NAA |
-| BIOS | 1.04 |
-| Unraid | 7.3.2 |
-| Kernel | 6.18.38-Unraid |
+| 设备 / DMI 产品名 | 主板 | 状态 | 默认模式 |
+|---|---|---|---|
+| Minisforum N5 / `N5` | `F8NAA` | 已实机验证（BIOS 1.04） | 开放 PWM |
+| Minisforum N5 Pro / `N5 PRO` | `F8NAA` | 实验性 | 只读温度/RPM |
+| Minisforum N5 Air / `N5A` 或 `N5 AIR` | `F8NAB` | 实验性 | 只读温度/RPM |
 
-内核模块必须与 `uname -r` 完全匹配。升级 Unraid 内核后，需要安装对应的新
-驱动包。驱动默认拒绝在非 N5/F8NAA 系统上加载。
+已验证构建环境仍为 Unraid 7.3.2 / `6.18.38-Unraid`。内核模块必须与
+`uname -r` 完全匹配；内核升级后需要新的驱动包。
+
+未知的 DMI 产品名/主板组合默认拒绝加载；开发调试可用的 `force=1`
+现在也默认只读。
 
 使用同一 IT5571 芯片并不等于自动兼容。不同厂商可能使用不同 PMC 命令、
-端口、EC RAM 和风扇接线。目前兼容列表只有经过完整实机验证的 N5/F8NAA；
-其他 IT5571 主板可以提交 DMI、固件和测试数据申请适配，验证后再加入列表。
+端口、EC RAM 和风扇接线。目前仍只有 N5/F8NAA 完成完整实机验证；N5 Pro
+和 N5 Air 必须逐个物理风扇、逐个通道验证后才能升级为正式支持。
+
+已有一位用户反馈本驱动在 Minisforum MS-A2 上运行良好。这属于社区用户反馈，
+并非维护者实机验证。由于尚未收集该机器准确的 DMI 和通道接线，MS-A2 暂不加入
+自动白名单；建议反馈者在 GitHub Issue 中补充这些信息后再建立正式配置。
 
 公开资料中采用 IT5571 的其他设备包括
 [Avalue EMX-EHLP](https://www.avalue.com/en/product/Industrial-Embedded-Motherboard/Mini-ITX/EMX-EHLP)
 工业主板和 [System76 Pangolin（pang13）](https://system76.com/tech-docs/models/pang13/README.html)。
 这些型号只是“潜在适配目标”，并非当前受支持设备；请勿绕过 DMI 检查强制加载。
+
+### N5 Pro / N5 Air 实验性测试方法
+
+插件首次加载这两款机型时只显示温度与 RPM，隐藏 PWM 节点。请先确认温度、
+转速和 `dmesg` 均合理。确认后如需主动加入 PWM 测试：
+
+```bash
+mkdir -p /boot/config/plugins/minisforum-n5-it5571
+printf 'EXPERIMENTAL_WRITE=1\n' > /boot/config/plugins/minisforum-n5-it5571/experimental.conf
+modprobe -r minisforum_n5_it5571
+modprobe minisforum_n5_it5571 experimental_write=1
+```
+
+每次只接一个风扇、只测试一个通道；先从全速开始，只做小幅降速，并持续观察
+所有温度。不要把 `pwm=0` 作为第一次测试。
 
 ## hwmon 通道
 
@@ -184,16 +204,20 @@ Control 或其他服务同时控制相同的 `pwmN`，否则多个控制循环�
 直接或间接损失（包括但不限于硬件损坏、风扇停转过热、数据丢失），作者不承担
 任何责任。完整条款见 [DISCLAIMER.md](DISCLAIMER.md)。
 
-仅支持经过完整实机验证的 N5 / F8NAA 组合；驱动通过 DMI 白名单拒绝在其他
-硬件上加载。
+目前只有 N5/F8NAA 完成实机验证。N5 Pro/F8NAA 与 N5 Air/F8NAB 属于需要
+用户显式确认的实验性配置，不作兼容性保证。
 
 ## 安全说明
 
-- 不要在其他 Minisforum 型号或其他主板上强制加载。
+- **如出现风扇停转、异常全速、控制到错误接口、通道消失或温度异常，立即终止。**
+  先停止风扇控制服务并运行 `modprobe -r minisforum_n5_it5571`；如不能卸载，
+  立即重启并交还 BIOS 控制。
+- 实验性 PWM 测试期间不得无人值守。
+- 不要把 `force=1 experimental_write=1` 作为未知主板的普通安装方式。
 - 不要安装与当前内核不匹配的 `.ko`。
 - 修改 PWM 前确认风扇与散热区域的对应关系。
 - 同一个 `pwmN` 只能交给一个风扇控制插件。
-- 驱动和配套服务退出时会恢复 `pwmN_enable=2`。
+- 模块卸载时只恢复本次确实尝试修改过的 PWM 通道。
 
 ## 构建
 

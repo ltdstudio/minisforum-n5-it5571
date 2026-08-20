@@ -9,12 +9,12 @@
 minisforum-n5-it5571: Minisforum N5 EC / IT5571 Driver
 minisforum-n5-it5571:
 minisforum-n5-it5571: Hardware-specific ITE IT5571 EC/hwmon driver for the
-minisforum-n5-it5571: Minisforum N5 F8NAA mainboard. Exposes four PWM fan
+minisforum-n5-it5571: Minisforum N5 family. Exposes four PWM fan
 minisforum-n5-it5571: controls (CPU/SSD/HDD/PCIe), three RPM inputs and four
 minisforum-n5-it5571: EC temperatures (CPU/System/Board/Ambient).
 minisforum-n5-it5571:
 minisforum-n5-it5571: Recommended companion: FanCtrl Plus 2 (fan control)
 minisforum-n5-it5571: and Dynamix System Temperature (sensor display).
-minisforum-n5-it5571: Validated on Unraid 7.3.2 / 6.18.38-Unraid / BIOS 1.04.
+minisforum-n5-it5571: N5 validated; N5 Pro and N5 Air profiles experimental.
 minisforum-n5-it5571:
 minisforum-n5-it5571: https://github.com/ltdstudio/minisforum-n5-it5571

@@ -10,13 +10,17 @@
 set -euo pipefail
 
 PLUGIN="minisforum-n5-it5571"
-VERSION="0.1.0"
+VERSION="0.2.0"
 KVER="${1:?KVER required}"
 KO="${2:?path to .ko required}"
 OUTDIR="${3:-$(pwd)}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"   # repo root
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
+
+# Keep the output path valid after the script changes into the staging tree.
+mkdir -p "$OUTDIR"
+OUTDIR="$(cd "$OUTDIR" && pwd)"
 
 # ── 1. WebGUI files ────────────────────────────────────────────────
 mkdir -p "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts" \
@@ -48,7 +52,6 @@ find "$WORK" -type d -exec chmod 755 {} \;
 find "$WORK" -type f -exec chmod 644 {} \;
 chmod 755 "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts/restore-bios.sh"
 
-mkdir -p "$OUTDIR"
 PKG="$OUTDIR/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
 cd "$WORK"
 # COPYFILE_DISABLE=1: 防止 macOS tar 写入 AppleDouble (._*) 垃圾条目

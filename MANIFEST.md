@@ -2,16 +2,15 @@
 
 ## `driver-prototype/`
 
-- `minisforum_n5_it5571.c`: validated Linux hwmon driver prototype source.
+- `minisforum_n5_it5571.c`: Linux hwmon driver source; N5 validated, N5 Pro/Air experimental.
 - `Makefile`: external kernel-module build file.
 - `install-driver.sh`: prototype Unraid installation script.
 - `uninstall-driver.sh`: prototype rollback script.
-- `minisforum_n5_it5571-6.18.38-Unraid.ko`: validated x86-64 module for exactly
+- `minisforum_n5_it5571-6.18.38-Unraid.ko`: x86-64 v0.2.0 module for exactly
   `6.18.38-Unraid`.
 - `README.md`: original prototype package notes.
 
-The prototype uses the old name `minisforum_n5_it5571`; it has not yet been renamed and
-rebuilt as `minisforum_n5_it5571`.
+The public module and hwmon name is `minisforum_n5_it5571`.
 
 ## `research-tools/`
 
@@ -29,8 +28,9 @@ can be rebuilt and may contain build-environment debug paths.
 - `build-n5-module.sh`: Alpine-based historical build procedure.
 - `build-n5-module-debian.sh`: Debian-based historical build procedure.
 
-These scripts document the validated prototype build process and expect build
-inputs under `/work`. They are not yet the final public CI/release workflow.
+These scripts document the prototype build process and expect build inputs
+under `/work`. Release v0.2.0 was rebuilt against the prepared
+`6.18.38-Unraid` kernel tree with GCC 14.2.0.
 
 ## `legacy-pcie-autofan/`
 

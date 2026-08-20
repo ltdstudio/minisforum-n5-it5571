@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Minisforum N5 (F8NAA) / ITE IT5571 hwmon driver.
+ * Minisforum N5 family / ITE IT5571 hwmon driver.
  *
  * Independently explored from F8NAA EC firmware V0.14 and validated on an N5
  * running Unraid 7.3.2 / Linux 6.18.38-Unraid.
@@ -8,8 +8,8 @@
  * DISCLAIMER: This is an independent community driver, NOT affiliated with or
  * endorsed by Minisforum. It contains unverified factors and is provided
  * "as is" without warranty of any kind. Use at your own risk; the author
- * accepts no liability for any damage or loss. The DMI guard restricts
- * loading to the validated N5 / F8NAA mainboard only — do not bypass it.
+ * accepts no liability for any damage or loss. N5 Pro/F8NAA and N5 Air/F8NAB
+ * support is experimental and PWM writes require explicit opt-in.
  *
  * The EC exposes four logical fan-control channels through PMC2 command 0xd5:
  *   1: CPU fan       (DCR1, TACH1)
@@ -50,7 +50,17 @@
 
 static bool force;
 module_param(force, bool, 0444);
-MODULE_PARM_DESC(force, "Load without the Minisforum N5/F8NAA DMI match");
+MODULE_PARM_DESC(force, "Load read-only without a known Minisforum DMI match");
+
+static bool experimental_write;
+module_param(experimental_write, bool, 0444);
+MODULE_PARM_DESC(experimental_write,
+		 "Enable PWM writes on experimental or force-loaded systems");
+
+struct n5_board_profile {
+	const char *name;
+	bool validated;
+};
 
 struct n5_data {
 	struct device *hwmon_dev;
@@ -58,6 +68,8 @@ struct n5_data {
 	long fan_min[N5_FAN_CHANNELS];
 	u8 pwm[N5_PWM_CHANNELS];
 	u8 pwm_enable[N5_PWM_CHANNELS];
+	bool pwm_touched[N5_PWM_CHANNELS];
+	bool write_enabled;
 };
 
 static struct platform_device *n5_pdev;
@@ -264,6 +276,8 @@ static umode_t n5_is_visible(const void *drvdata,
 			     enum hwmon_sensor_types type, u32 attr,
 			     int channel)
 {
+	const struct n5_data *data = drvdata;
+
 	switch (type) {
 	case hwmon_temp:
 		switch (attr) {
@@ -284,6 +298,9 @@ static umode_t n5_is_visible(const void *drvdata,
 			return 0;
 		}
 	case hwmon_pwm:
+		/* Experimental systems start in read-only sensor mode. */
+		if (!data->write_enabled)
+			return 0;
 		switch (attr) {
 		case hwmon_pwm_input:
 		case hwmon_pwm_enable:
@@ -375,6 +392,8 @@ static int n5_write(struct device *dev, enum hwmon_sensor_types type,
 
 	if (type != hwmon_pwm || channel >= N5_PWM_CHANNELS)
 		return -EOPNOTSUPP;
+	if (!data->write_enabled)
+		return -EPERM;
 
 	mutex_lock(&data->lock);
 	if (attr == hwmon_pwm_input) {
@@ -386,6 +405,8 @@ static int n5_write(struct device *dev, enum hwmon_sensor_types type,
 			ret = -EBUSY;
 			goto out;
 		}
+		/* A failed multi-register update may still have changed the EC. */
+		data->pwm_touched[channel] = true;
 		ret = n5_set_pwm_locked(channel, value);
 		if (!ret)
 			data->pwm[channel] = value;
@@ -393,6 +414,7 @@ static int n5_write(struct device *dev, enum hwmon_sensor_types type,
 		switch (value) {
 		case 0:
 			/* Full-speed fail-safe mode. */
+			data->pwm_touched[channel] = true;
 			ret = n5_set_pwm_locked(channel, 255);
 			if (!ret) {
 				data->pwm[channel] = 255;
@@ -402,6 +424,7 @@ static int n5_write(struct device *dev, enum hwmon_sensor_types type,
 		case 1:
 			/* Entering manual mode starts at full speed for safety. */
 			if (data->pwm_enable[channel] != 1) {
+				data->pwm_touched[channel] = true;
 				ret = n5_set_pwm_locked(channel, 255);
 				if (!ret)
 					data->pwm[channel] = 255;
@@ -410,9 +433,12 @@ static int n5_write(struct device *dev, enum hwmon_sensor_types type,
 				data->pwm_enable[channel] = 1;
 			break;
 		case 2:
+			data->pwm_touched[channel] = true;
 			ret = n5_set_auto_locked(channel);
-			if (!ret)
+			if (!ret) {
 				data->pwm_enable[channel] = 2;
+				data->pwm_touched[channel] = false;
+			}
 			break;
 		default:
 			ret = -EINVAL;
@@ -457,22 +483,72 @@ static const struct hwmon_chip_info n5_chip_info = {
 	.info = n5_hwmon_info,
 };
 
-static bool n5_dmi_supported(void)
-{
-	const char *product = dmi_get_system_info(DMI_PRODUCT_NAME);
-	const char *board = dmi_get_system_info(DMI_BOARD_NAME);
+static struct n5_board_profile n5_f8naa = {
+	.name = "Minisforum N5 / F8NAA",
+	.validated = true,
+};
 
-	return product && board && !strcmp(product, "N5") && !strcmp(board, "F8NAA");
-}
+static struct n5_board_profile n5_pro_f8naa = {
+	.name = "Minisforum N5 Pro / F8NAA",
+	.validated = false,
+};
+
+static struct n5_board_profile n5_air_f8nab = {
+	.name = "Minisforum N5 Air / F8NAB",
+	.validated = false,
+};
+
+static const struct dmi_system_id n5_dmi_table[] = {
+	{
+		.ident = "Minisforum N5 / F8NAA",
+		.matches = {
+			DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "N5"),
+			DMI_EXACT_MATCH(DMI_BOARD_NAME, "F8NAA"),
+		},
+		.driver_data = &n5_f8naa,
+	},
+	{
+		.ident = "Minisforum N5 Pro / F8NAA (experimental)",
+		.matches = {
+			DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "N5 PRO"),
+			DMI_EXACT_MATCH(DMI_BOARD_NAME, "F8NAA"),
+		},
+		.driver_data = &n5_pro_f8naa,
+	},
+	{
+		.ident = "Minisforum N5 Air / F8NAB (experimental)",
+		.matches = {
+			DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "N5A"),
+			DMI_EXACT_MATCH(DMI_BOARD_NAME, "F8NAB"),
+		},
+		.driver_data = &n5_air_f8nab,
+	},
+	{
+		/* Alternate marketing-style DMI string seen on some firmware. */
+		.ident = "Minisforum N5 Air / F8NAB (experimental)",
+		.matches = {
+			DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "N5 AIR"),
+			DMI_EXACT_MATCH(DMI_BOARD_NAME, "F8NAB"),
+		},
+		.driver_data = &n5_air_f8nab,
+	},
+	{ }
+};
+MODULE_DEVICE_TABLE(dmi, n5_dmi_table);
 
 static int n5_probe(struct platform_device *pdev)
 {
 	struct n5_data *data;
+	const struct dmi_system_id *match;
+	const struct n5_board_profile *profile = NULL;
 	int i;
 
-	if (!force && !n5_dmi_supported())
+	match = dmi_first_match(n5_dmi_table);
+	if (match)
+		profile = match->driver_data;
+	if (!profile && !force)
 		return dev_err_probe(&pdev->dev, -ENODEV,
-				     "unsupported system; expected Minisforum N5/F8NAA\n");
+				     "unsupported system; expected N5/F8NAA, N5 PRO/F8NAA or N5A/F8NAB\n");
 
 	if (!request_region(N5_EC_DATA, 1, N5_DRIVER_NAME))
 		return dev_err_probe(&pdev->dev, -EBUSY,
@@ -506,6 +582,9 @@ static int n5_probe(struct platform_device *pdev)
 	}
 
 	mutex_init(&data->lock);
+	data->write_enabled = profile && profile->validated;
+	if (!data->write_enabled && experimental_write)
+		data->write_enabled = true;
 	for (i = 0; i < N5_PWM_CHANNELS; i++) {
 		data->pwm[i] = 255;
 		data->pwm_enable[i] = 2;
@@ -522,8 +601,21 @@ static int n5_probe(struct platform_device *pdev)
 		return PTR_ERR(data->hwmon_dev);
 	}
 
+	if (profile && profile->validated) {
+		dev_info(&pdev->dev, "%s: validated profile; PWM writes enabled\n",
+			 profile->name);
+	} else if (data->write_enabled) {
+		dev_warn(&pdev->dev,
+			 "%s: EXPERIMENTAL PWM WRITES ENABLED; stop immediately if a fan stops, runs unexpectedly, a channel is mismatched, or temperatures become abnormal\n",
+			 profile ? profile->name : "force-loaded unknown system");
+	} else {
+		dev_warn(&pdev->dev,
+			 "%s: experimental read-only mode; PWM nodes hidden (set experimental_write=1 only after checking temperature and RPM data)\n",
+			 profile ? profile->name : "force-loaded unknown system");
+	}
 	dev_info(&pdev->dev,
-		 "registered 4 PWM, 4 fan and 4 temperature channels\n");
+		 "registered 4 fan and 4 temperature channels%s\n",
+		 data->write_enabled ? " plus 4 writable PWM channels" : "");
 	return 0;
 }
 
@@ -532,10 +624,14 @@ static void n5_remove(struct platform_device *pdev)
 	struct n5_data *data = platform_get_drvdata(pdev);
 	int i;
 
-	/* Never leave the board in manual mode when the module is unloaded. */
+	/* Restore only channels this module actually attempted to modify. */
 	mutex_lock(&data->lock);
-	for (i = 0; i < N5_PWM_CHANNELS; i++)
-		(void)n5_set_auto_locked(i);
+	for (i = 0; i < N5_PWM_CHANNELS; i++) {
+		if (data->pwm_touched[i] && n5_set_auto_locked(i))
+			dev_warn(&pdev->dev,
+				 "failed to restore PWM channel %d to EC automatic mode\n",
+				 i + 1);
+	}
 	mutex_unlock(&data->lock);
 
 	release_region(N5_PMC2_STATUS_COMMAND, 1);
@@ -579,7 +675,7 @@ static void __exit n5_exit(void)
 module_init(n5_init);
 module_exit(n5_exit);
 
-MODULE_AUTHOR("ltdstudio, community exploration for the Minisforum N5");
-MODULE_DESCRIPTION("Minisforum N5/F8NAA IT5571 fan/temp hwmon driver; community project, not affiliated with Minisforum; use at your own risk");
+MODULE_AUTHOR("ltdstudio, community exploration for the Minisforum N5 family");
+MODULE_DESCRIPTION("Minisforum N5 family IT5571 fan/temp hwmon driver; N5 Pro/Air support is experimental; not affiliated with Minisforum; use at your own risk");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("0.1.0");
+MODULE_VERSION("0.2.0");

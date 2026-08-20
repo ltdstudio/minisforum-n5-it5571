@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "minisforum-n5-it5571">
   <!ENTITY author    "ltdstudio">
-  <!ENTITY version   "0.1.0">
+  <!ENTITY version   "0.2.0">
   <!ENTITY repo      "https://github.com/ltdstudio/minisforum-n5-it5571">
   <!ENTITY pluginURL "&repo;/raw/main/minisforum-n5-it5571.plg">
   <!ENTITY support   "&repo;/issues">
@@ -16,7 +16,8 @@
   This is an independent community plugin, NOT affiliated with or endorsed by
   Minisforum. It contains unverified factors and is provided "as is", without
   warranty of any kind. Use at your own risk; the author accepts no liability
-  for any damage or loss. Only N5 / F8NAA hardware is supported (DMI guard).
+  for any damage or loss. N5 Pro / F8NAA and N5 Air / F8NAB support is
+  experimental and starts in read-only mode.
   See https://github.com/ltdstudio/minisforum-n5-it5571/blob/main/DISCLAIMER.md
 -->
 
@@ -30,6 +31,17 @@
 
   <CHANGES>
 ## &version;
+- Add experimental N5 Pro / F8NAA and N5 Air / F8NAB DMI profiles
+- Experimental profiles start read-only; PWM writes require explicit
+  experimental_write=1 opt-in
+- Stop immediately and restore BIOS control if a fan stops, runs unexpectedly,
+  a channel is mismatched, or temperatures become abnormal
+- Restore only fan channels that this module actually modified
+- Community report: the driver works well on one MS-A2 system when manually
+  force-loaded; MS-A2 is not auto-whitelisted until its DMI is collected
+- N5 / F8NAA remains the only fully hardware-validated profile
+
+## 0.1.0
 - Initial public release
 - Kernel module: four PWM outputs (CPU / SSD / HDD / PCIe), three RPM
   inputs, four EC temperatures for the Minisforum N5 F8NAA mainboard
@@ -50,18 +62,54 @@ KVER=$(uname -r)
 
 echo "--- Installing ${PLUGIN} v${VERSION} for kernel ${KVER} ---"
 
-# Only N5/F8NAA boards are supported (sysfs DMI — works on all Unraid versions)
+# Exact product + board pairs only (sysfs DMI — works on all Unraid versions)
+PRODUCT=$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown)
 BOARD=$(cat /sys/class/dmi/id/board_name 2>/dev/null || echo unknown)
-if ! echo "$BOARD" | grep -qi "F8NAA"; then
-  echo "ERROR: This driver only supports the Minisforum N5 (F8NAA mainboard)."
-  echo "Detected board: ${BOARD}"
-  echo "Installation aborted."
-  exit 1
+PROFILE=""
+EXPERIMENTAL=0
+case "${PRODUCT}:${BOARD}" in
+  "N5:F8NAA")
+    PROFILE="Minisforum N5 / F8NAA (validated)"
+    ;;
+  "N5 PRO:F8NAA")
+    PROFILE="Minisforum N5 Pro / F8NAA (experimental)"
+    EXPERIMENTAL=1
+    ;;
+  "N5A:F8NAB"|"N5 AIR:F8NAB")
+    PROFILE="Minisforum N5 Air / F8NAB (experimental)"
+    EXPERIMENTAL=1
+    ;;
+  *)
+    echo "ERROR: This DMI product/board pair is not on the automatic allowlist."
+    echo "Detected product: ${PRODUCT}"
+    echo "Detected board:   ${BOARD}"
+    echo "Installation aborted. Do not bypass the guard without hardware validation."
+    exit 1
+    ;;
+esac
+echo "Detected profile: ${PROFILE}"
+
+MODULE_ARGS=()
+if [ "${EXPERIMENTAL}" -eq 1 ]; then
+  CONFIG_DIR="/boot/config/plugins/${PLUGIN}"
+  OPT_IN="${CONFIG_DIR}/experimental.conf"
+  mkdir -p "${CONFIG_DIR}"
+  echo "WARNING: THIS BOARD PROFILE IS EXPERIMENTAL."
+  echo "The first load is read-only: temperature/RPM only, with no PWM nodes."
+  if grep -Eq '^[[:space:]]*EXPERIMENTAL_WRITE=1([[:space:]]*(#.*)?)?$' "${OPT_IN}" 2>/dev/null; then
+    MODULE_ARGS+=(experimental_write=1)
+    echo "WARNING: experimental PWM writes are explicitly enabled by ${OPT_IN}."
+    echo "Stop immediately if any fan stops, runs unexpectedly, a channel is mismatched,"
+    echo "or temperatures become abnormal. Run: modprobe -r minisforum_n5_it5571"
+  else
+    echo "Verify sensor readings first. See README.md before enabling PWM writes."
+  fi
 fi
 
 # Download the kernel-matched Slackware package from GitHub Releases
 PKG_URL="${REPO}/releases/download/v${VERSION}/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
 PKG_FILE="/tmp/${PLUGIN}.txz"
+SHA_FILE="${PKG_FILE}.sha256"
 
 echo "Downloading ${PKG_URL} ..."
 wget -q -O "${PKG_FILE}" "${PKG_URL}"
@@ -72,6 +120,21 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+echo "Verifying SHA-256 ..."
+wget -q -O "${SHA_FILE}" "${PKG_URL}.sha256" || {
+  echo "ERROR: checksum file is missing. Installation aborted."
+  rm -f "${PKG_FILE}" "${SHA_FILE}"
+  exit 1
+}
+EXPECTED_SHA=$(awk 'NR==1 {print $1}' "${SHA_FILE}")
+ACTUAL_SHA=$(sha256sum "${PKG_FILE}" | awk '{print $1}')
+if [ -z "${EXPECTED_SHA}" ] || [ "${EXPECTED_SHA}" != "${ACTUAL_SHA}" ]; then
+  echo "ERROR: package SHA-256 mismatch. Installation aborted."
+  rm -f "${PKG_FILE}" "${SHA_FILE}"
+  exit 1
+fi
+rm -f "${SHA_FILE}"
+
 # Install the Slackware package (reinstall allows upgrades)
 upgradepkg --install-new "${PKG_FILE}" 2>/dev/null || installpkg "${PKG_FILE}"
 rm -f "${PKG_FILE}"
@@ -79,9 +142,11 @@ rm -f "${PKG_FILE}"
 # Rebuild module dependency list and load the module
 depmod -a "${KVER}"
 if ! lsmod | awk '{print $1}' | grep -qx minisforum_n5_it5571; then
-  modprobe minisforum_n5_it5571 2>/dev/null || {
+  modprobe minisforum_n5_it5571 "${MODULE_ARGS[@]}" 2>/dev/null || {
     echo "WARNING: could not auto-load minisforum_n5_it5571; check dmesg."
   }
+else
+  echo "NOTE: an older module is already loaded; reboot or reload it to activate v${VERSION}."
 fi
 
 # Reload udev rules
@@ -100,13 +165,14 @@ PLUGIN="&name;"
 
 echo "--- Removing ${PLUGIN} ---"
 
-# Restore EC automatic fan mode before unloading (safety first)
-if [ -x /usr/local/emhttp/plugins/${PLUGIN}/scripts/restore-bios.sh ]; then
-  /usr/local/emhttp/plugins/${PLUGIN}/scripts/restore-bios.sh
+# Unload first: v0.2.0 restores only channels it actually touched.
+if ! rmmod minisforum_n5_it5571 2>/dev/null; then
+  echo "WARNING: normal unload failed; attempting emergency EC automatic restore."
+  if [ -x /usr/local/emhttp/plugins/${PLUGIN}/scripts/restore-bios.sh ]; then
+    /usr/local/emhttp/plugins/${PLUGIN}/scripts/restore-bios.sh
+  fi
+  rmmod minisforum_n5_it5571 2>/dev/null
 fi
-
-# Unload the kernel module
-rmmod minisforum_n5_it5571 2>/dev/null
 
 # Remove the Slackware package
 removepkg "${PLUGIN}" 2>/dev/null

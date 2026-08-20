@@ -18,7 +18,7 @@ Drivers:System
 ## Short description
 
 ```text
-Hardware-specific IT5571 EC/hwmon driver for the Minisforum N5 F8NAA mainboard. Exposes four PWM controls, three confirmed RPM inputs, and four EC temperatures. Recommended with FanCtrl Plus 2 for fan control and Dynamix System Temperature for sensor display.
+Hardware-specific IT5571 EC/hwmon driver for the Minisforum N5 family. N5/F8NAA is validated; N5 Pro/F8NAA and N5 Air/F8NAB are experimental and read-only by default. Exposes four PWM controls, three confirmed RPM inputs, and four EC temperatures. Recommended with FanCtrl Plus 2 and Dynamix System Temperature.
 ```
 
 ## Full description
@@ -40,18 +40,25 @@ Recommended mapping: CPU temperature → CPU Fan; NVMe group → SSD Fan; array-
 
 Recommended software roles: Minisforum N5 EC / IT5571 Driver provides the low-level hwmon nodes, FanCtrl Plus 2 performs automatic fan control, and Dynamix System Temperature handles temperature selection and WebGUI/Dashboard display.
 
-Only DMI-matched Minisforum N5/F8NAA systems are supported. Publicly documented IT5571 systems such as the Avalue EMX-EHLP and System76 Pangolin (pang13) are potential porting targets, not currently compatible systems; each requires separate firmware-protocol and board-wiring validation. The kernel module must match the running Unraid kernel exactly; unsupported hardware or kernels are rejected.
+Recognized profiles are N5/F8NAA (validated), N5 PRO/F8NAA (experimental), and N5A or N5 AIR/F8NAB (experimental). Experimental profiles expose temperature/RPM only until `experimental_write=1` is explicitly enabled. One user reports good operation on an MS-A2, but that model is not auto-whitelisted until exact DMI and channel-mapping data are collected. The kernel module must match the running Unraid kernel exactly.
 ```
 
 ## Installation warning
 
 ```text
-This plugin directly controls embedded-controller fan outputs and is only for the Minisforum N5/F8NAA. Do not force-load it on other systems. Verify that a driver package exists for the running Unraid kernel. PCIe Fan has no RPM feedback; connect a physical fan before enabling PCIe temperature-linked control. Assign each PWM to only one of FanCtrl Plus 2, Dynamix Fan Auto Control, or another control service.
+This plugin directly controls embedded-controller fan outputs. N5 Pro and N5 Air support is experimental. Stop immediately if a fan stops, runs unexpectedly, controls the wrong header, disappears, or temperatures become abnormal; unload the module and return to BIOS control. Never leave an experimental test unattended. Verify the kernel package and assign each PWM to only one controller.
 ```
 
 ## Initial release changelog
 
 ```text
+### 0.2.0
+
+- Added experimental N5 Pro/F8NAA and N5 Air/F8NAB profiles.
+- Experimental profiles start read-only; PWM writes require explicit opt-in.
+- Added immediate-stop guidance and touched-channel-only restore.
+- Documented positive MS-A2 community feedback without auto-whitelisting it.
+
 ### 0.1.0
 
 - Initial public release for Minisforum N5/F8NAA.

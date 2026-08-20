@@ -14,11 +14,7 @@ for hw in /sys/class/hwmon/hwmon*; do
     enable="${hw}/pwm${ch}_enable"
     [ -e "$enable" ] || continue
 
-    # Clamp extreme duty cycles before handing back to EC/BIOS
-    cur=$(cat "$pwm" 2>/dev/null || echo 0)
-    if [ "$cur" -lt 85 ] || [ "$cur" -gt 160 ]; then
-      echo 85 > "$pwm" 2>/dev/null
-    fi
+    # Emergency fallback: ask the EC to resume its native automatic curve.
     echo 2 > "$enable" 2>/dev/null
   done
 done

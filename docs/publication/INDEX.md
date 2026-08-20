@@ -12,7 +12,8 @@
 | Unraid 插件 ID | `minisforum-n5-it5571` |
 | 建议 `.plg` 文件 | `minisforum-n5-it5571.plg` |
 
-显示名明确标出 IT5571，但兼容性仍限定到经过实机验证的 Minisforum N5/F8NAA。
+显示名明确标出 IT5571；N5/F8NAA 已验证，N5 Pro/F8NAA 与 N5 Air/F8NAB
+作为默认只读、显式开启 PWM 的实验性配置发布。
 其他 IT5571 设备不能仅凭芯片型号直接安装，需要建立并验证单独的主板配置。
 README 和社区文案可列出 Avalue EMX-EHLP、System76 Pangolin（pang13）等公开采用
 IT5571 的设备作为潜在适配目标，但不得将其表述为已经兼容。
@@ -34,7 +35,7 @@ System Temperature 负责在 Unraid WebGUI/Dashboard 中选择和展示温度。
 
 ## 占位符说明
 
-本归档已将所有占位符替换为仓库 `ltdstudio/minisforum-n5-it5571` 的真实值（版本 v0.1.0）。
+本归档已将所有占位符替换为仓库 `ltdstudio/minisforum-n5-it5571` 的真实值（版本 v0.2.0）。
 如迁移到新仓库，请重新替换：版本号、raw GitHub URL、`.plg` URL、
 仓库 URL、Issues URL、Unraid 支持帖 URL。
 

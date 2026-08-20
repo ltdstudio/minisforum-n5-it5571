@@ -8,23 +8,25 @@ English summary follows the Chinese section.
 
 ## 中文说明
 
-这是截至 2026-08-08 的完整开发归档，包含 Minisforum N5/F8NAA 的 EC 风扇、
+这是 Minisforum N5 系列 IT5571 EC 风扇、
 转速和温度接口探索成果、Linux hwmon 驱动原型、诊断工具、构建脚本、已验证
 内核模块以及中英文 GitHub/Unraid 发布文案。
 
 ### 当前状态
 
 - 已验证硬件：Minisforum N5、F8NAA、BIOS 1.04、ITE IT5571 C。
+- 实验性配置：N5 Pro/F8NAA、N5 Air/F8NAB（默认只读，PWM 需显式确认）。
+- 社区反馈：一台 MS-A2 使用良好；尚未加入自动白名单。
 - 已验证系统：Unraid 7.3.2、Linux 6.18.38-Unraid。
 - 已验证原型模块名：`minisforum_n5_it5571`。
-- 计划公开模块名：`minisforum_n5_it5571`。
-- 计划插件 ID：`minisforum-n5-it5571`。
+- 公开模块名：`minisforum_n5_it5571`。
+- 插件 ID：`minisforum-n5-it5571`。
 - 当前 `.ko` 仅适用于 `6.18.38-Unraid`，不能用于其他内核。
-- 最终公开改名、Community Applications `.plg`、干净环境重新编译和发布前
-  回归测试尚未完成。
+- v0.2.0 已完成源码编译、模块元数据、包结构、脚本与 XML 检查；新增机型仍需
+  用户完成物理风扇通道验证。
 
-因此，本归档是开发和保存资料，不是可以直接提交 Community Applications 的
-最终插件包。
+N5 Pro/N5 Air 如出现风扇停转、异常运行、通道错配或温度异常，必须立即终止、
+卸载模块并恢复 BIOS 控制。
 
 ### 推荐使用组合
 
@@ -37,25 +39,25 @@ FanCtrl Plus 或 Dynamix Fan Auto Control 写入同一个 PWM。
 
 ### 安全说明
 
-诊断工具和驱动能够直接访问 EC/Super I/O 端口。只应在已经验证的 N5/F8NAA
-上以 root 使用。错误写入可能造成风扇停转、过热或主板功能异常。
+诊断工具和驱动能够直接访问 EC/Super I/O 端口。实验性机型默认只读；只有完成
+读数核对并明确接受风险后才可开启 PWM。错误写入可能造成风扇停转、过热或主板
+功能异常。
 
 归档已排除密码、IP 地址、SSH 会话、厂商 BIOS/EC 固件、固件反汇编、ITE
 保密数据手册、Linux 源码树和编译缓存。
 
 ## English summary
 
-This is the complete development archive as of 2026-08-08. It contains the
-Minisforum N5/F8NAA EC fan, tachometer, and temperature research; the Linux
+This archive contains Minisforum N5-family EC fan, tachometer, and temperature
+research; the Linux
 hwmon driver prototype; diagnostic source; build scripts; the validated kernel
 module; and bilingual GitHub/Unraid publication drafts.
 
-The validated prototype is still named `minisforum_n5_it5571`. The planned public module
-name is `minisforum_n5_it5571`, and the planned plugin ID is
-`minisforum-n5-it5571`. The included `.ko` is only for `6.18.38-Unraid`.
-Final public renaming, the Community Applications `.plg`, a clean rebuild, and
-release regression testing are still pending. This archive must not be
-submitted directly as the final CA plugin.
+The public module is `minisforum_n5_it5571`, and the plugin ID is
+`minisforum-n5-it5571`. N5/F8NAA is validated. N5 Pro/F8NAA and N5 Air/F8NAB
+are experimental read-only-first profiles. One MS-A2 user reports success,
+but MS-A2 is not auto-whitelisted. The included `.ko` is only for
+`6.18.38-Unraid`.
 
 Recommended stack: this driver supplies hwmon nodes, FanCtrl Plus 2 performs
 automatic fan control, and Dynamix System Temperature displays the EC sensors.

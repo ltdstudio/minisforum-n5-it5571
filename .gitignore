@@ -15,6 +15,7 @@ modules.order
 zig-cache/
 zig-out/
 .cache/
+/dist/
 
 # 构建输入（历史脚本期望 /work）
 /work/

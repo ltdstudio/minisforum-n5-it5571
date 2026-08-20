@@ -17,7 +17,7 @@ Drivers:System
 ## 简短描述
 
 ```text
-适用于采用 ITE IT5571 EC 的 Minisforum N5（F8NAA）的专用 hwmon 驱动，为 Unraid 提供 CPU、SSD、HDD、PCIe 四路风扇 PWM，CPU/SSD/HDD 三路真实转速，以及 CPU、System、Board、Ambient 四路温度。推荐搭配 FanCtrl Plus 2 控制风扇，并搭配 Dynamix System Temperature 显示温度。
+适用于 Minisforum N5 系列 ITE IT5571 EC 的专用 hwmon 驱动。N5/F8NAA 已验证；N5 Pro/F8NAA、N5 Air/F8NAB 为实验性且默认只读。提供四路 PWM、三路转速与四路温度，推荐搭配 FanCtrl Plus 2 和 Dynamix System Temperature。
 ```
 
 ## 完整描述
@@ -39,18 +39,25 @@ PCIe Fan 的 PWM 已经过物理风扇停转/全速验证，但主板固件没�
 
 推荐软件分工：Minisforum N5 EC / IT5571 Driver 提供底层 hwmon 节点，FanCtrl Plus 2 负责自动调速，Dynamix System Temperature 负责温度选择和界面展示。
 
-仅支持 DMI 匹配的 Minisforum N5/F8NAA。Avalue EMX-EHLP、System76 Pangolin（pang13）等设备也公开标注采用 IT5571，但并不会因此自动兼容；这些型号目前仅是潜在适配目标，需要针对固件协议与主板接线单独验证。内核模块必须与当前 Unraid 内核完全匹配；不支持的硬件或内核版本将拒绝安装。
+已识别配置包括 N5/F8NAA（已验证）、N5 PRO/F8NAA（实验性）以及 N5A 或 N5 AIR/F8NAB（实验性）。实验性配置默认只开放温度/RPM，必须显式设置 `experimental_write=1` 才开放 PWM。已有一位用户反馈 MS-A2 使用良好，但在收集准确 DMI 与通道映射前不自动加入白名单。内核模块必须与当前 Unraid 内核完全匹配。
 ```
 
 ## 安装警告
 
 ```text
-此插件直接控制主板嵌入式控制器的风扇输出，只能安装在 Minisforum N5/F8NAA。请勿在其他型号上强制加载。安装前确认当前 Unraid 内核存在对应驱动包。PCIe Fan 没有 RPM 反馈，配置温度联动前必须确认风扇已经物理连接。同一个 PWM 只能由 FanCtrl Plus 2、Dynamix Fan Auto Control 或其他控制服务中的一个负责。
+此插件直接控制嵌入式控制器风扇输出，N5 Pro 与 N5 Air 支持仍属实验性。如出现风扇停转、异常全速、控制到错误接口、通道消失或温度异常，必须立即终止、卸载模块并恢复 BIOS 控制；实验期间不得无人值守。安装前确认内核包匹配，同一个 PWM 只能由一个控制器负责。
 ```
 
 ## 首次发布更新日志
 
 ```text
+### 0.2.0
+
+- 新增实验性 N5 Pro/F8NAA 与 N5 Air/F8NAB 配置。
+- 实验性配置默认只读，PWM 写入需要用户显式确认。
+- 新增异常立即终止说明，并只恢复本次实际修改的通道。
+- 记录 MS-A2 用户正面反馈，但暂不自动加入白名单。
+
 ### 0.1.0
 
 - Initial public release for Minisforum N5/F8NAA.

@@ -171,7 +171,7 @@ tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
   风扇控制建议使用 Fan control: <b>FanCtrl Plus 2</b>（推荐 recommended）
   系统温控建议使用 System temperature: <b>Dynamix System Temperature</b>
   每路 PWM 只交给一个控制器 Assign each PWM to one controller only。
-  模块卸载自动恢复 EC 自动模式 Module unload restores EC automatic mode.
+  模块仅恢复本次实际修改的通道 The module restores only channels it modified.
 </div>
 
 <div class="warnbox">⚠ 免责声明：本插件为社区爱好者非官方开发，与 Minisforum（铭凡）官方无关；包含未验证因素，按“现状”提供，不作任何担保。使用即表示您自行承担全部风险，作者不对任何直接或间接损失（包括硬件损坏、风扇停转过热、数据丢失）承担责任。完整条款：<a href="https://github.com/ltdstudio/minisforum-n5-it5571/blob/main/DISCLAIMER.md" target="_blank" rel="noopener">DISCLAIMER.md</a></div>
@@ -180,7 +180,7 @@ tt { background: var(--pg-card-bg); padding: 1px 5px; border-radius: 4px; }
   <a href="https://github.com/ltdstudio/minisforum-n5-it5571" target="_blank" rel="noopener">GitHub</a>
   &nbsp;·&nbsp; <a href="https://github.com/ltdstudio/minisforum-n5-it5571/issues" target="_blank" rel="noopener">提交 Bug 报告 Report a bug</a>
   &nbsp;·&nbsp; Powered by <b>ltdstudio</b>
-  &nbsp;·&nbsp; v0.1.0
+  &nbsp;·&nbsp; v0.2.0
 </div>
 
 <script>

@@ -1,8 +1,13 @@
-# Minisforum N5 / F8NAA Unraid hwmon driver
+# Minisforum N5 family / IT5571 Unraid hwmon driver
 
 This package is built and validated for Unraid 7.3.2 with kernel
 `6.18.38-Unraid`. It exposes the Minisforum N5 IT5571 fan controller and EC
 temperatures through the standard Linux hwmon ABI.
+
+N5/F8NAA is validated. N5 Pro/F8NAA and N5 Air/F8NAB are experimental and
+load in read-only sensor mode unless `experimental_write=1` is explicitly set.
+If a fan stops, runs unexpectedly, maps to the wrong channel, or temperatures
+become abnormal, stop immediately and unload the module.
 
 ## Channel map
 
@@ -18,8 +23,8 @@ temperatures through the standard Linux hwmon ABI.
 | `temp4_input` | Ambient Temp | EC 0x06 |
 
 `pwmN_enable=1` selects manual control and `pwmN_enable=2` restores the native
-EC/BIOS automatic curve. Module removal also restores all four channels to EC
-automatic mode.
+EC/BIOS automatic curve. Module removal restores channels that the module
+actually attempted to modify.
 
 ## Unraid integration
 

@@ -7,9 +7,9 @@
 
 English | [简体中文](README.zh-CN.md)
 
-`minisforum_n5_it5571` is a Linux hwmon driver for the Minisforum N5 F8NAA
-mainboard. It exposes four fan PWM controls, three confirmed tachometer inputs,
-and four EC temperature sensors to Unraid.
+`minisforum_n5_it5571` is a Linux hwmon driver for the Minisforum N5 family and
+its ITE IT5571 EC. N5/F8NAA is hardware-validated; N5 Pro/F8NAA and N5
+Air/F8NAB are experimental profiles.
 
 ## Features
 
@@ -43,23 +43,27 @@ Real captures from the validation system (Unraid 7.3.2, kernel 6.18.38-Unraid).
 
 ## Compatibility
 
-| Item | Validated version |
-|---|---|
-| Device | Minisforum N5 |
-| Mainboard | F8NAA |
-| BIOS | 1.04 |
-| Unraid | 7.3.2 |
-| Kernel | 6.18.38-Unraid |
+| Device / DMI product | Mainboard | Status | Default mode |
+|---|---|---|---|
+| Minisforum N5 / `N5` | `F8NAA` | Hardware-validated (BIOS 1.04) | PWM enabled |
+| Minisforum N5 Pro / `N5 PRO` | `F8NAA` | Experimental | Read-only sensors |
+| Minisforum N5 Air / `N5A` or `N5 AIR` | `F8NAB` | Experimental | Read-only sensors |
 
-The module must match `uname -r` exactly. A new package is required after an
-Unraid kernel update. The driver refuses to load on systems that do not match
-the N5/F8NAA DMI identity.
+The validated build target remains Unraid 7.3.2 / `6.18.38-Unraid`. The module
+must match `uname -r` exactly; a new package is required after a kernel update.
+
+Unknown DMI pairs are rejected unless a developer uses
+the read-only `force=1` override.
 
 Using the same IT5571 chip does not imply drop-in compatibility. Vendors may use
 different PMC commands, ports, EC RAM layouts, and fan wiring. The compatibility
-list currently contains only the fully validated N5/F8NAA. Owners of other
-IT5571 systems may submit DMI, firmware, and hardware test data for a separate
-validated board profile.
+list still contains only one fully validated profile: N5/F8NAA. N5 Pro and N5
+Air must be tested one physical fan at a time before they can be promoted.
+
+One user reports that the driver works well on a Minisforum MS-A2. This is a
+community report, not maintainer hardware validation. MS-A2 is not automatically
+whitelisted because its exact DMI and channel wiring have not been collected;
+please attach those details to a GitHub issue before requesting a formal profile.
 
 Other publicly documented IT5571 systems include the
 [Avalue EMX-EHLP](https://www.avalue.com/en/product/Industrial-Embedded-Motherboard/Mini-ITX/EMX-EHLP)
@@ -67,6 +71,22 @@ industrial mainboard and the
 [System76 Pangolin (pang13)](https://system76.com/tech-docs/models/pang13/README.html).
 They are potential porting targets, not currently supported systems. Do not
 bypass the DMI guard to force-load this driver on them.
+
+### Experimental N5 Pro / N5 Air procedure
+
+The plugin initially loads these profiles with temperature and RPM only; PWM
+nodes are hidden. Verify plausible temperatures, RPM values, and `dmesg` first.
+To explicitly opt in after that read-only check:
+
+```bash
+mkdir -p /boot/config/plugins/minisforum-n5-it5571
+printf 'EXPERIMENTAL_WRITE=1\n' > /boot/config/plugins/minisforum-n5-it5571/experimental.conf
+modprobe -r minisforum_n5_it5571
+modprobe minisforum_n5_it5571 experimental_write=1
+```
+
+Test one connected fan/channel at a time, begin at full speed, make only a small
+reduction, and continuously watch temperatures. Do not start with `pwm=0`.
 
 ## hwmon channels
 
@@ -197,16 +217,22 @@ author accepts no liability for any direct or indirect loss — including
 hardware damage, fan-stall overheating, or data loss — arising from the use of
 this driver. See [DISCLAIMER.md](DISCLAIMER.md) for the full terms.
 
-Only the fully validated N5 / F8NAA combination is supported; the driver
-refuses to load on any other hardware via its DMI guard.
+Only N5/F8NAA is fully validated. N5 Pro/F8NAA and N5 Air/F8NAB are opt-in
+experimental profiles; no compatibility guarantee is made for them.
 
 ## Safety
 
-- Do not force-load this module on other Minisforum models or mainboards.
+- **Stop immediately** if a fan stops, runs unexpectedly, controls the wrong
+  header, disappears, or any temperature becomes abnormal. Stop fan-control
+  services and run `modprobe -r minisforum_n5_it5571`; reboot into BIOS control
+  if unload fails.
+- Never leave an experimental PWM test unattended.
+- Do not use `force=1 experimental_write=1` on an unknown board as a normal
+  installation method.
 - Do not install a `.ko` built for a different kernel.
 - Confirm the physical fan-to-zone mapping before changing PWM values.
 - Assign each `pwmN` to one fan-control plugin only.
-- Module and service exit restore `pwmN_enable=2`.
+- Module unload restores only channels the module actually attempted to modify.
 
 ## Building
 

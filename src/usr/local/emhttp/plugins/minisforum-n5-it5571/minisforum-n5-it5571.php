@@ -21,7 +21,7 @@ function read_attr($base, $attr) {
 }
 
 $h = hwmon_path();
-$out = ['loaded' => is_dir($h), 'hwmon' => is_dir($h) ? basename($h) : null, 'version' => '0.1.0', 'pwm' => [], 'temp' => []];
+$out = ['loaded' => is_dir($h), 'hwmon' => is_dir($h) ? basename($h) : null, 'version' => '0.2.0', 'pwm' => [], 'temp' => []];
 
 $pwm_map = [1 => ['zh' => 'CPU 风扇', 'en' => 'CPU Fan'],
             2 => ['zh' => 'SSD 风扇', 'en' => 'SSD Fan'],

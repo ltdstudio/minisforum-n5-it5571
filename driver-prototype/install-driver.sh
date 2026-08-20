@@ -1,7 +1,8 @@
 #!/bin/bash
 # Minisforum N5 EC / IT5571 driver — legacy manual install helper.
 # DISCLAIMER: independent community script, not affiliated with Minisforum.
-# Contains unverified factors; use at your own risk. N5 / F8NAA only.
+# Contains unverified factors; use at your own risk. N5 Pro/Air are read-only
+# unless experimental_write=1 is explicitly supplied.
 set -euo pipefail
 
 plugin_dir=/boot/config/plugins/n5-ec-hwmon
