@@ -10,9 +10,15 @@
 set -euo pipefail
 
 PLUGIN="minisforum-n5-it5571"
-VERSION="0.2.1"
+VERSION="0.2.2"
 KVER="${1:?KVER required}"
 KO="${2:?path to .ko required}"
+[ -s "$KO" ] || { echo "Module missing or empty: $KO" >&2; exit 1; }
+if command -v modinfo >/dev/null 2>&1; then
+  [ "$(modinfo -F vermagic "$KO" | cut -d ' ' -f 1)" = "$KVER" ] || {
+    echo "Module vermagic does not match $KVER" >&2; exit 1;
+  }
+fi
 OUTDIR="${3:-$(pwd)}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"   # repo root
 WORK=$(mktemp -d)
@@ -55,7 +61,17 @@ chmod 755 "$WORK/usr/local/emhttp/plugins/$PLUGIN/scripts/restore-bios.sh"
 PKG="$OUTDIR/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
 cd "$WORK"
 # COPYFILE_DISABLE=1: 防止 macOS tar 写入 AppleDouble (._*) 垃圾条目
-COPYFILE_DISABLE=1 tar --owner=root --group=root -cJf "$PKG" .
+# bsdtar's --owner/--group set names only; Slackware needs numeric root IDs too.
+case "$(tar --version)" in
+  *bsdtar*) TAR_OWNER=(--uid=0 --gid=0 --uname=root --gname=root) ;;
+  *) TAR_OWNER=(--owner=root --group=root) ;;
+esac
+COPYFILE_DISABLE=1 tar --no-xattrs "${TAR_OWNER[@]}" -cJf "$PKG" .
+if command -v sha256sum >/dev/null 2>&1; then
+  (cd "$OUTDIR" && sha256sum "$(basename "$PKG")" > "$(basename "$PKG").sha256")
+else
+  (cd "$OUTDIR" && shasum -a 256 "$(basename "$PKG")" > "$(basename "$PKG").sha256")
+fi
 cd - > /dev/null
 ls -la "$PKG"
 echo "PKG_OK: $PKG"

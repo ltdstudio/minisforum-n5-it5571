@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "minisforum-n5-it5571">
   <!ENTITY author    "ltdstudio">
-  <!ENTITY version   "0.2.1">
+  <!ENTITY version   "0.2.2">
   <!ENTITY repo      "https://github.com/ltdstudio/minisforum-n5-it5571">
   <!ENTITY pluginURL "&repo;/raw/main/minisforum-n5-it5571.plg">
   <!ENTITY support   "&repo;/issues">
@@ -31,6 +31,14 @@
 
   <CHANGES>
 ## &version;
+- Add a kernel-matched package for Unraid 7.3.3 / 6.18.54-Unraid
+- Retain support for Unraid 7.3.2 / 6.18.38-Unraid
+- Cache verified kernel packages on the boot flash for offline startup
+- Reinstall cached packages into the RAM filesystem after reboot
+- Abort on package installation, vermagic, or module-load failures
+- Preserve existing EC/PWM behavior and experimental profile guards
+
+## 0.2.1
 - Fix WebGUI CSS leaking into the surrounding Unraid Plugins page
 - Scope every page style to the plugin container and remove the standalone
   HTML document wrapper
@@ -63,6 +71,7 @@
   <FILE Run="/bin/bash">
   <INLINE>
 #!/bin/bash
+set -euo pipefail
 PLUGIN="&name;"
 REPO="&repo;"
 VERSION="&version;"
@@ -114,52 +123,71 @@ if [ "${EXPERIMENTAL}" -eq 1 ]; then
   fi
 fi
 
-# Download the kernel-matched Slackware package from GitHub Releases
+# Keep a verified kernel-matched package on the boot flash for offline reboot.
 PKG_URL="${REPO}/releases/download/v${VERSION}/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
-PKG_FILE="/tmp/${PLUGIN}.txz"
+CONFIG_DIR="/boot/config/plugins/${PLUGIN}"
+mkdir -p "${CONFIG_DIR}"
+PKG_FILE="${CONFIG_DIR}/${PLUGIN}-${VERSION}-x86_64-${KVER}.txz"
 SHA_FILE="${PKG_FILE}.sha256"
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "${TEMP_DIR}"' EXIT
 
-echo "Downloading ${PKG_URL} ..."
-wget -q -O "${PKG_FILE}" "${PKG_URL}"
-if [ $? -ne 0 ]; then
-  echo "ERROR: No package for kernel ${KVER}."
-  echo "Check ${REPO}/releases for available packages or report an issue."
-  rm -f "${PKG_FILE}"
-  exit 1
-fi
-
-echo "Verifying SHA-256 ..."
-wget -q -O "${SHA_FILE}" "${PKG_URL}.sha256" || {
-  echo "ERROR: checksum file is missing. Installation aborted."
-  rm -f "${PKG_FILE}" "${SHA_FILE}"
-  exit 1
+verify_package() {
+  local expected actual
+  [ -s "$1" ] &amp;&amp; [ -s "$2" ] || return 1
+  expected=$(awk 'NR==1 {print $1}' "$2")
+  [[ "${expected}" =~ ^[0-9a-fA-F]{64}$ ]] || return 1
+  actual=$(sha256sum "$1" | awk '{print $1}')
+  [ "${expected,,}" = "${actual}" ]
 }
-EXPECTED_SHA=$(awk 'NR==1 {print $1}' "${SHA_FILE}")
-ACTUAL_SHA=$(sha256sum "${PKG_FILE}" | awk '{print $1}')
-if [ -z "${EXPECTED_SHA}" ] || [ "${EXPECTED_SHA}" != "${ACTUAL_SHA}" ]; then
-  echo "ERROR: package SHA-256 mismatch. Installation aborted."
-  rm -f "${PKG_FILE}" "${SHA_FILE}"
-  exit 1
+
+if verify_package "${PKG_FILE}" "${SHA_FILE}"; then
+  echo "Using verified cached package for ${KVER}."
+else
+  echo "Downloading ${PKG_URL} ..."
+  if ! wget -q -O "${TEMP_DIR}/package.txz" "${PKG_URL}"; then
+    echo "ERROR: No downloadable package for kernel ${KVER}."
+    echo "A module built for another kernel cannot be used."
+    echo "Check ${REPO}/releases for a matching package."
+    exit 1
+  fi
+  wget -q -O "${TEMP_DIR}/package.sha256" "${PKG_URL}.sha256" || {
+    echo "ERROR: checksum file is missing. Installation aborted."
+    exit 1
+  }
+  verify_package "${TEMP_DIR}/package.txz" "${TEMP_DIR}/package.sha256" || {
+    echo "ERROR: package SHA-256 mismatch. Installation aborted."
+    exit 1
+  }
+  cp "${TEMP_DIR}/package.txz" "${PKG_FILE}.new"
+  cp "${TEMP_DIR}/package.sha256" "${SHA_FILE}.new"
+  mv "${PKG_FILE}.new" "${PKG_FILE}"
+  mv "${SHA_FILE}.new" "${SHA_FILE}"
 fi
-rm -f "${SHA_FILE}"
 
 # Install the Slackware package (reinstall allows upgrades)
-upgradepkg --install-new "${PKG_FILE}" 2>/dev/null || installpkg "${PKG_FILE}"
-rm -f "${PKG_FILE}"
+upgradepkg --install-new --reinstall "${PKG_FILE}"
+
+MODULE_FILE="/lib/modules/${KVER}/extra/minisforum_n5_it5571.ko"
+if [ "$(modinfo -F vermagic "${MODULE_FILE}" | awk '{print $1}')" != "${KVER}" ]; then
+  echo "ERROR: installed module vermagic does not match ${KVER}."
+  exit 1
+fi
 
 # Rebuild module dependency list and load the module
 depmod -a "${KVER}"
 if ! lsmod | awk '{print $1}' | grep -qx minisforum_n5_it5571; then
-  modprobe minisforum_n5_it5571 "${MODULE_ARGS[@]}" 2>/dev/null || {
-    echo "WARNING: could not auto-load minisforum_n5_it5571; check dmesg."
+  modprobe minisforum_n5_it5571 "${MODULE_ARGS[@]}" || {
+    echo "ERROR: could not load minisforum_n5_it5571; check dmesg."
+    exit 1
   }
 else
-  echo "NOTE: an older module is already loaded; reboot or reload it to activate v${VERSION}."
+  echo "NOTE: the module is already loaded; reload it if upgrading the driver binary."
 fi
 
 # Reload udev rules
-udevadm control --reload-rules 2>/dev/null
-udevadm trigger 2>/dev/null
+udevadm control --reload-rules 2>/dev/null || true
+udevadm trigger 2>/dev/null || true
 
 echo "--- ${PLUGIN} v${VERSION} installed ---"
   </INLINE>

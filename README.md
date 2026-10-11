@@ -49,7 +49,9 @@ Real captures from the validation system (Unraid 7.3.2, kernel 6.18.38-Unraid).
 | Minisforum N5 Pro / `N5 PRO` | `F8NAA` | Experimental | Read-only sensors |
 | Minisforum N5 Air / `N5A` or `N5 AIR` | `F8NAB` | Experimental | Read-only sensors |
 
-The validated build target remains Unraid 7.3.2 / `6.18.38-Unraid`. The module
+N5/F8NAA with BIOS 1.04 is validated on Unraid 7.3.2 / `6.18.38-Unraid` and,
+in the 2026-10-11 repair, Unraid 7.3.3 / `6.18.54-Unraid`. Release v0.2.2
+provides packages for both kernels. The module
 must match `uname -r` exactly; a new package is required after a kernel update.
 
 Unknown DMI pairs are rejected unless a developer uses
@@ -126,6 +128,16 @@ https://raw.githubusercontent.com/ltdstudio/minisforum-n5-it5571/main/minisforum
 ```
 
 The maintainer must publish a release asset for each supported Unraid kernel.
+
+The installer keeps each verified package and its SHA-256 sidecar in
+`/boot/config/plugins/minisforum-n5-it5571/`. It checks the checksum on every
+installation, uses a valid cache without a network download, and reinstalls
+the package into Unraid's RAM filesystem after reboot. Missing kernel packages,
+invalid checksums, installation errors, and module-load errors abort installation.
+
+For an unpublished local build, copy the matching `.txz` and `.txz.sha256` into
+that cache directory and install the repaired `.plg`. Keep the package filename
+and plugin version aligned; never substitute a module from another kernel.
 
 ## Recommended companion: Dynamix System Temperature
 

@@ -48,7 +48,9 @@ hwmon 驱动。N5/F8NAA 已完成实机验证；N5 Pro/F8NAA 与 N5 Air/F8NAB �
 | Minisforum N5 Pro / `N5 PRO` | `F8NAA` | 实验性 | 只读温度/RPM |
 | Minisforum N5 Air / `N5A` 或 `N5 AIR` | `F8NAB` | 实验性 | 只读温度/RPM |
 
-已验证构建环境仍为 Unraid 7.3.2 / `6.18.38-Unraid`。内核模块必须与
+N5/F8NAA、BIOS 1.04 已验证于 Unraid 7.3.2 / `6.18.38-Unraid`，并于
+2026-10-11 验证了 Unraid 7.3.3 / `6.18.54-Unraid`。
+v0.2.2 同时提供两个内核的匹配包。内核模块必须与
 `uname -r` 完全匹配；内核升级后需要新的驱动包。
 
 未知的 DMI 产品名/主板组合默认拒绝加载；开发调试可用的 `force=1`
@@ -119,6 +121,15 @@ https://raw.githubusercontent.com/ltdstudio/minisforum-n5-it5571/main/minisforum
 ```
 
 发布者必须为每个支持的 Unraid 内核提供匹配的 release 资产。
+
+安装器会将驱动包及 SHA-256 文件保存在
+`/boot/config/plugins/minisforum-n5-it5571/`，每次安装先检查校验值。
+有效缓存无需联网下载；重启后会把包重新安装到 Unraid 的内存文件系统。
+没有匹配包、校验失败、包安装失败或模块加载失败均会中止安装。
+
+使用尚未发布的本地构建时，先将匹配的 `.txz` 和 `.txz.sha256` 放入上述
+缓存目录，再安装修复后的 `.plg`。包文件名与插件版本必须一致，不能替换成
+其他内核的模块。
 
 ## 推荐搭配：Dynamix System Temperature
 
