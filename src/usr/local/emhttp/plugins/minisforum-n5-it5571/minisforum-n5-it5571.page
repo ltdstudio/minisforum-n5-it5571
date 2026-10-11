@@ -165,7 +165,7 @@ $loaded = $data['loaded'];
   <a href="https://github.com/ltdstudio/minisforum-n5-it5571" target="_blank" rel="noopener">GitHub</a>
   &nbsp;·&nbsp; <a href="https://github.com/ltdstudio/minisforum-n5-it5571/issues" target="_blank" rel="noopener">提交 Bug 报告 Report a bug</a>
   &nbsp;·&nbsp; Powered by <b>ltdstudio</b>
-  &nbsp;·&nbsp; v0.2.2
+  &nbsp;·&nbsp; v0.2.3
 </div>
 
 <script>

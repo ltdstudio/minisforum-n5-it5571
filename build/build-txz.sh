@@ -10,7 +10,7 @@
 set -euo pipefail
 
 PLUGIN="minisforum-n5-it5571"
-VERSION="0.2.2"
+VERSION="0.2.3"
 KVER="${1:?KVER required}"
 KO="${2:?path to .ko required}"
 [ -s "$KO" ] || { echo "Module missing or empty: $KO" >&2; exit 1; }

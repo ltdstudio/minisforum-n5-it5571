@@ -2,12 +2,12 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "minisforum-n5-it5571">
   <!ENTITY author    "ltdstudio">
-  <!ENTITY version   "0.2.2">
+  <!ENTITY version   "0.2.3">
   <!ENTITY repo      "https://github.com/ltdstudio/minisforum-n5-it5571">
   <!ENTITY pluginURL "&repo;/raw/main/minisforum-n5-it5571.plg">
   <!ENTITY support   "&repo;/issues">
   <!ENTITY launch    "Utilities/minisforum-n5-it5571">
-  <!ENTITY icon      "&repo;/raw/main/icons/minisforum-n5-it5571.png">
+  <!ENTITY icon      "minisforum-n5-it5571.png">
 ]>
 
 <!--
@@ -31,6 +31,10 @@
 
   <CHANGES>
 ## &version;
+- Fix the Plugins list icon: use the packaged PNG filename, not a remote URL
+- Include both kernel packages and all v0.2.2 installation fixes
+
+## 0.2.2
 - Add a kernel-matched package for Unraid 7.3.3 / 6.18.54-Unraid
 - Retain support for Unraid 7.3.2 / 6.18.38-Unraid
 - Cache verified kernel packages on the boot flash for offline startup

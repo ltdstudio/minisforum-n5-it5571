@@ -50,7 +50,7 @@ Real captures from the validation system (Unraid 7.3.2, kernel 6.18.38-Unraid).
 | Minisforum N5 Air / `N5A` or `N5 AIR` | `F8NAB` | Experimental | Read-only sensors |
 
 N5/F8NAA with BIOS 1.04 is validated on Unraid 7.3.2 / `6.18.38-Unraid` and,
-in the 2026-10-11 repair, Unraid 7.3.3 / `6.18.54-Unraid`. Release v0.2.2
+in the 2026-10-11 repair, Unraid 7.3.3 / `6.18.54-Unraid`. Release v0.2.3
 provides packages for both kernels. The module
 must match `uname -r` exactly; a new package is required after a kernel update.
 
