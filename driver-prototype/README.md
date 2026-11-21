@@ -4,8 +4,9 @@ This package is built and validated for Unraid 7.3.2 with kernel
 `6.18.38-Unraid`. It exposes the Minisforum N5 IT5571 fan controller and EC
 temperatures through the standard Linux hwmon ABI.
 
-N5/F8NAA is validated. N5 Pro/F8NAA and N5 Air/F8NAB are experimental and
-load in read-only sensor mode unless `experimental_write=1` is explicitly set.
+N5/F8NAA is validated. N5 Pro/F8NAA, N5 Pro/F8NAB and N5 Air/F8NAB are
+experimental and load in read-only sensor mode unless `experimental_write=1`
+is explicitly set.
 If a fan stops, runs unexpectedly, maps to the wrong channel, or temperatures
 become abnormal, stop immediately and unload the module.
 

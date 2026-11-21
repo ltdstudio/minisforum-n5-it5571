@@ -8,7 +8,7 @@
 [English](README.md) | 简体中文
 
 `minisforum_n5_it5571` 是面向 Minisforum N5 系列及其 ITE IT5571 EC 的 Linux
-hwmon 驱动。N5/F8NAA 已完成实机验证；N5 Pro/F8NAA 与 N5 Air/F8NAB 为实验性配置。
+hwmon 驱动。N5/F8NAA 已完成实机验证；N5 Pro/F8NAA、N5 Pro/F8NAB 与 N5 Air/F8NAB 为实验性配置。
 
 ## 功能
 
@@ -46,6 +46,7 @@ hwmon 驱动。N5/F8NAA 已完成实机验证；N5 Pro/F8NAA 与 N5 Air/F8NAB �
 |---|---|---|---|
 | Minisforum N5 / `N5` | `F8NAA` | 已实机验证（BIOS 1.04） | 开放 PWM |
 | Minisforum N5 Pro / `N5 PRO` | `F8NAA` | 实验性 | 只读温度/RPM |
+| Minisforum N5 Pro / `N5 PRO` | `F8NAB` | 实验性 | 只读温度/RPM |
 | Minisforum N5 Air / `N5A` 或 `N5 AIR` | `F8NAB` | 实验性 | 只读温度/RPM |
 
 N5/F8NAA、BIOS 1.04 已验证于 Unraid 7.3.2 / `6.18.38-Unraid`、
@@ -215,7 +216,7 @@ Control 或其他服务同时控制相同的 `pwmN`，否则多个控制循环�
 直接或间接损失（包括但不限于硬件损坏、风扇停转过热、数据丢失），作者不承担
 任何责任。完整条款见 [DISCLAIMER.md](DISCLAIMER.md)。
 
-目前只有 N5/F8NAA 完成实机验证。N5 Pro/F8NAA 与 N5 Air/F8NAB 属于需要
+目前只有 N5/F8NAA 完成实机验证。N5 Pro/F8NAA、N5 Pro/F8NAB 与 N5 Air/F8NAB 属于需要
 用户显式确认的实验性配置，不作兼容性保证。
 
 ## 安全说明

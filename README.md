@@ -8,8 +8,8 @@
 English | [简体中文](README.zh-CN.md)
 
 `minisforum_n5_it5571` is a Linux hwmon driver for the Minisforum N5 family and
-its ITE IT5571 EC. N5/F8NAA is hardware-validated; N5 Pro/F8NAA and N5
-Air/F8NAB are experimental profiles.
+its ITE IT5571 EC. N5/F8NAA is hardware-validated; N5 Pro/F8NAA, N5
+Pro/F8NAB and N5 Air/F8NAB are experimental profiles.
 
 ## Features
 
@@ -47,6 +47,7 @@ Real captures from the validation system (Unraid 7.3.2, kernel 6.18.38-Unraid).
 |---|---|---|---|
 | Minisforum N5 / `N5` | `F8NAA` | Hardware-validated (BIOS 1.04) | PWM enabled |
 | Minisforum N5 Pro / `N5 PRO` | `F8NAA` | Experimental | Read-only sensors |
+| Minisforum N5 Pro / `N5 PRO` | `F8NAB` | Experimental | Read-only sensors |
 | Minisforum N5 Air / `N5A` or `N5 AIR` | `F8NAB` | Experimental | Read-only sensors |
 
 N5/F8NAA with BIOS 1.04 is validated on Unraid 7.3.2 / `6.18.38-Unraid`,
@@ -229,8 +230,8 @@ author accepts no liability for any direct or indirect loss — including
 hardware damage, fan-stall overheating, or data loss — arising from the use of
 this driver. See [DISCLAIMER.md](DISCLAIMER.md) for the full terms.
 
-Only N5/F8NAA is fully validated. N5 Pro/F8NAA and N5 Air/F8NAB are opt-in
-experimental profiles; no compatibility guarantee is made for them.
+Only N5/F8NAA is fully validated. N5 Pro/F8NAA, N5 Pro/F8NAB and N5 Air/F8NAB
+are opt-in experimental profiles; no compatibility guarantee is made for them.
 
 ## Safety
 
