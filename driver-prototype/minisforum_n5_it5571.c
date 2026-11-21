@@ -8,8 +8,9 @@
  * DISCLAIMER: This is an independent community driver, NOT affiliated with or
  * endorsed by Minisforum. It contains unverified factors and is provided
  * "as is" without warranty of any kind. Use at your own risk; the author
- * accepts no liability for any damage or loss. N5 Pro/F8NAA and N5 Air/F8NAB
- * support is experimental and PWM writes require explicit opt-in.
+ * accepts no liability for any damage or loss. N5 Pro/F8NAA, N5 Pro/F8NAB
+ * and N5 Air/F8NAB support is experimental and PWM writes require explicit
+ * opt-in.
  *
  * The EC exposes four logical fan-control channels through PMC2 command 0xd5:
  *   1: CPU fan       (DCR1, TACH1)
@@ -493,6 +494,11 @@ static struct n5_board_profile n5_pro_f8naa = {
 	.validated = false,
 };
 
+static struct n5_board_profile n5_pro_f8nab = {
+	.name = "Minisforum N5 Pro / F8NAB",
+	.validated = false,
+};
+
 static struct n5_board_profile n5_air_f8nab = {
 	.name = "Minisforum N5 Air / F8NAB",
 	.validated = false,
@@ -514,6 +520,15 @@ static const struct dmi_system_id n5_dmi_table[] = {
 			DMI_EXACT_MATCH(DMI_BOARD_NAME, "F8NAA"),
 		},
 		.driver_data = &n5_pro_f8naa,
+	},
+	{
+		/* N5 Pro units also ship on board F8NAB (issues #6, #8). */
+		.ident = "Minisforum N5 Pro / F8NAB (experimental)",
+		.matches = {
+			DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "N5 PRO"),
+			DMI_EXACT_MATCH(DMI_BOARD_NAME, "F8NAB"),
+		},
+		.driver_data = &n5_pro_f8nab,
 	},
 	{
 		.ident = "Minisforum N5 Air / F8NAB (experimental)",
@@ -548,7 +563,7 @@ static int n5_probe(struct platform_device *pdev)
 		profile = match->driver_data;
 	if (!profile && !force)
 		return dev_err_probe(&pdev->dev, -ENODEV,
-				     "unsupported system; expected N5/F8NAA, N5 PRO/F8NAA or N5A/F8NAB\n");
+				     "unsupported system; expected N5/F8NAA, N5 PRO/F8NAA, N5 PRO/F8NAB or N5A/F8NAB\n");
 
 	if (!request_region(N5_EC_DATA, 1, N5_DRIVER_NAME))
 		return dev_err_probe(&pdev->dev, -EBUSY,

@@ -101,6 +101,10 @@ case "${PRODUCT}:${BOARD}" in
     PROFILE="Minisforum N5 Pro / F8NAA (experimental)"
     EXPERIMENTAL=1
     ;;
+  "N5 PRO:F8NAB")
+    PROFILE="Minisforum N5 Pro / F8NAB (experimental)"
+    EXPERIMENTAL=1
+    ;;
   "N5A:F8NAB"|"N5 AIR:F8NAB")
     PROFILE="Minisforum N5 Air / F8NAB (experimental)"
     EXPERIMENTAL=1
